@@ -1,12 +1,16 @@
 module.exports = StructType
 
 function StructType(descr) {
-  var type = { $structType: true }
+  var type = function () {
+    return type.read.apply(type, arguments)
+  }
   var transforms = []
   
   Object.keys(descr).forEach(function (key) {
     type[key] = descr[key]
   })
+
+  type.$structType = true
 
   type.read = function () {
     var val = descr.read.apply(type, arguments)

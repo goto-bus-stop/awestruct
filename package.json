@@ -1,5 +1,5 @@
 { "name": "awestruct"
-, "version": "0.5.0"
+, "version": "0.7.0"
 , "license": "MIT"
 , "keywords": [ "buffer", "struct" ]
 , "bugs": "https://github.com/goto-bus-stop/node-awestruct/issues"

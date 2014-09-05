@@ -2,76 +2,91 @@ const StructType = require('./StructType')
 
 module.exports = Struct
 
+/**
+ * @param {Object} descriptor Object describing this Struct, like `{ key: type, key2: type2 }`
+ * @return {function()} Buffer decoding function, with StructType properties and an `.encode` method to encode Buffers.
+ */
 function Struct(descriptor) {
   var keys = Object.keys(descriptor)
   var types = keys.map(function (key) {
     return Struct.getType(descriptor[key])
   })
 
+  /**
+   * Decodes a buffer into the object structure as described by this Struct.
+   * @param {Object|Buffer} opts A Buffer to decode.
+   */
   var decode = function (opts) {
     if (Buffer.isBuffer(opts)) {
       opts = { buf: opts }
     }
 
     var hasParent = !!opts.struct
-      , struct = { $parent: hasParent ? opts.struct : Struct.ROOT }
+      , struct = {}
+      // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
       , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0, parent: struct.$parent }
-
+    
+    // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
+    // ```
+    // Struct({
+    //   size: 'int8',
+    //   b: Struct({
+    //     text1: Struct.char('../size'),
+    //     text2: Struct.char('/size')
+    //   })
+    // })
+    // ```
+    // Both ../size and /size need to access parent structs.
+    struct.$parent = hasParent ? opts.struct : null
+    
     keys.forEach(function (key, i) {
-      var type = types[i]
-			if (!type) {
-				throw new Error('type "' + descriptor[key] + '" not found')
-			}
-      struct[key] = type.read(subOpts)
-      if (hasParent) opts.offset = subOpts.offset
+      struct[key] = types[i].read(subOpts)
     })
+    
+    // if we have a parent Struct, we also need to update its offset
+    // so it continues reading in the right place
+    if (hasParent) opts.offset = subOpts.offset
 
     delete struct.$parent
 
     return struct
   }
 
+  /**
+   * Encodes an object into a Buffer as described by this Struct.
+   * @param {Object} struct The Object to encode.
+   */
   var encode = function (struct) {
-    var size = decode.size(struct)
+    var size = type.size(struct)
       , buf = new Buffer(size)
       , opts = { buf: buf, offset: 0 }
 
-    keys.forEach(function (key, i) {
-      var type = types[i]
-      type.write(opts, struct[key])
-    })
+    type.write(opts, struct)
 
     return buf
   }
 
-  decode.$struct = true
-
-  decode.encode = encode
-
-  decode.size = function (struct) {
-    return keys.reduce(function (size, key) {
-      return size + Struct.getSize(descriptor[key], struct[key], struct)
-    }, 0)
-  }
-
-  decode.type = StructType({
-    read: decode,
-    write: function (opts, struct) {
+  var type = StructType({
+    read: decode
+  , write: function (opts, struct) {
       keys.forEach(function (key) {
         var type = Struct.getType(descriptor[key])
         type.write(opts, struct[key])
       })
-    },
-    size: decode.size
+    }
+  , size: function (struct) {
+      return keys.reduce(function (size, key) {
+        return size + Struct.getSize(descriptor[key], struct[key], struct)
+      }, 0)
+    }
   })
+  type.encode = encode
 
-  return decode
+  return type
 }
 
 Struct.Type = StructType
 
-// used as parent of the top-level struct
-Struct.ROOT = {}
 // dict of name→StructType
 Struct.types = {}
 
@@ -92,22 +107,21 @@ function descend(struct, key) {
 }
 
 /**
- * @param {Object} struct
- * @param {*} value Value to find. If a string, used as a path inside the `struct`. If a function, gets called with `this = struct`. Else, used as the value.
+ * @param {Object} struct Object to find a value on.
+ * @param {*} value Value to find. If a string, used as a path inside the `struct`. If a function, gets called with `this = struct`. Else, used unchanged as the value.
  * @return {*}
  */
 Struct.getValue = function (struct, value) {
+  // key path inside the `struct`
   if (typeof value === 'string') {
     var slash = value.indexOf('/')
+    // if starts with /, we start from the root
     if (slash === 0) {
-      // if starts with /, we start from the root
-      while (struct.$parent !== Struct.ROOT) {
-        struct = struct.$parent
-      }
+      while (struct.$parent !== null) struct = struct.$parent
       return descend(struct, value.substr(1))
     }
+    // if there's a slash elsewhere, we have a ../ to move to parent structs
     else if (slash !== -1) {
-      // if there's a slash elsewhere, we have a ../ to move to parent structs
       while (value.indexOf('../') === 0) {
         if (struct.$parent === struct.ROOT) {
           throw new Error('cannot access nonexistent parent')
@@ -127,50 +141,61 @@ Struct.getValue = function (struct, value) {
   return value
 }
 
+/**
+ * @param {StructType|string|function} type Type (class) of the value.
+ *    Used to get the size (function) of the type.
+ * @param {*} value Value for which to find the size.
+ *    Used by eg. Structs that have arrays of dependent length inside.
+ * @param {Object} struct Struct to operate on.
+ *    Used by eg. arrays that have a dependent length.
+ */
 Struct.getSize = function (type, value, struct) {
   var size = Struct.getType(type).size
   return typeof size === 'function' ? size(value, struct) : size
 }
 
+/**
+ * @param {string|Object|function} type Type name to find, or a StructType-ish descriptor object.
+ * @return {StructType}
+ */
 Struct.getType = function (type) {
-  // `Struct({})`s
-  if (typeof type === 'function' && type.$struct) return type.type
-  // `StructType({})`s
-  if (typeof type === 'object' && type.$structType) return type
-  // Type names
+  // an object that can read/write something. `type.size` can also be 0
+  if (type.read && type.write && type.size != null) return type.$structType ? type : StructType(type)
+  // Named types
   if (Struct.types[type]) return Struct.types[type]
+  throw new Error('no such type: "' + type + '"')
 }
 
+/**
+ * Defines a named type.
+ * @param {string} name Name for this type.
+ * @param {Object|function} definition Type definition: either a StructType-ish object,
+ *    or a function that generates a StructType-ish object.
+ */
 Struct.defineType = function (name, definition) {
   var type
-  // type reader/writer generator
-  if (typeof definition === 'function') {
-    type = function () {
-      var t = definition.apply(null, arguments)
-      if (!t.$structType) {
-        t = StructType(t)
-      }
-      return t
-    }
-  }
-  // plain type reader/writer
-  else {
-    if (!definition.$structType) {
-      definition = StructType(definition)
-    }
+  // type reader/writer generator, or a StructType
+  if (typeof definition === 'function' || definition.$structType) {
     type = definition
-//    type = function () {
-//      return definition.read.apply(definition, arguments)
-//    }
-//    Object.keys(definition).forEach(function (key) {
-//      type[key] = definition[key]
-//    })
+  }
+  // plain object with .read/.write
+  else {
+    type = StructType(definition)
   }
   
   Struct.types[name] = type
   if (!Struct[name]) Struct[name] = type
 }
 
+/**
+ * Defines a type that maps straight to Buffer methods. 
+ * Used internally for the different Number reading methods.
+ * @param {string} name Name of the type.
+ * @param {number} size Size of the type.
+ * @param {string} readName Name of the reading method.
+ * @param {string} writeName Name of the writing method.
+ * @private
+ */
 function defineBufferType(name, size, readName, writeName) {
   Struct.defineType(name, {
     read: function (opts) {
@@ -186,19 +211,19 @@ function defineBufferType(name, size, readName, writeName) {
   })
 }
 
-defineBufferType('int8', 1, 'readInt8', 'writeInt8')
+defineBufferType('int8',  1, 'readInt8',  'writeInt8')
+defineBufferType('uint8', 1, 'readUInt8', 'writeUInt8')
 // little endians
 defineBufferType('int16',  2, 'readInt16LE',  'writeInt16LE')
-defineBufferType('int32',  4, 'readInt32LE',  'writeInt32LE')
-defineBufferType('uint8',  1, 'readUInt8',    'writeUInt8')
 defineBufferType('uint16', 2, 'readUInt16LE', 'writeUInt16LE')
+defineBufferType('int32',  4, 'readInt32LE',  'writeInt32LE')
 defineBufferType('uint32', 4, 'readUInt32LE', 'writeUInt32LE')
 defineBufferType('float',  4, 'readFloatLE',  'writeFloatLE')
 defineBufferType('double', 8, 'readDoubleLE', 'writeDoubleLE')
 // big endians
 defineBufferType('int16be',  2, 'readInt16BE',  'writeInt16BE')
-defineBufferType('int32be',  4, 'readInt32BE',  'writeInt32BE')
 defineBufferType('uint16be', 2, 'readUInt16BE', 'writeUInt16BE')
+defineBufferType('int32be',  4, 'readInt32BE',  'writeInt32BE')
 defineBufferType('uint32be', 4, 'readUInt32BE', 'writeUInt32BE')
 defineBufferType('floatbe',  4, 'readFloatBE',  'writeFloatBE')
 defineBufferType('doublebe', 8, 'readDoubleBE', 'writeDoubleBE')
@@ -219,7 +244,7 @@ Struct.defineType('bool', {
 
 Struct.defineType('array', function (size, type) {
   var typeClass = Struct.getType(type)
-  return {
+  return StructType({
     read: function (opts) {
       var l = Struct.getValue(opts.struct, size)
         , i
@@ -241,36 +266,35 @@ Struct.defineType('array', function (size, type) {
     } : function (value, struct) {
       return value.length ? Struct.getSize(type, value[0], struct) * value.length : 0
     }
-  }
+  })
 })
 
-Struct.defineType('char', new function () {
-  var generate = function (size) {
-    return {
-      read: function (opts) {
-        var length = Struct.getValue(opts.struct, size)
-          , result = opts.buf.slice(opts.offset, opts.offset + length)
-        opts.offset += length
-        return result.toString()
-      }
-    , write: function (opts, value) {
-        opts.buf.write(value, opts.offset, size)
-        opts.offset += size
-      }
-    , size: size
+Struct.defineType('char', function (size, encoding) {
+  if (!encoding) encoding = 'utf8'
+  return StructType({
+    read: function (opts) {
+      var length = Struct.getValue(opts.struct, size)
+        , result = opts.buf.toString(encoding, opts.offset, opts.offset + length)
+      opts.offset += length
+      return result
     }
-  }
-  var size1 = generate(1)
-  generate.read = size1.read
-  generate.write = size1.write
-  generate.size = 1
-  
-  return generate
+  , write: function (opts, value) {
+      var length = Struct.getValue(opts.struct, size)
+      if (value.length !== length) {
+        throw new Error('cannot write incorrect char size, expected ' + length + ', got ' + value.length)
+      }
+      opts.buf.write(value, opts.offset, length, encoding)
+      opts.offset += length
+    }
+  , size: function (struct) {
+      return Struct.getValue(opts.struct, size)
+    }
+  })
 })
 
 // conditional type
 Struct.defineType('if', function (condition, type) {
-  return {
+  return StructType({
     read: function (opts) {
       if (Struct.getValue(opts.struct, condition)) {
         return Struct.getType(type).read(opts)
@@ -285,5 +309,13 @@ Struct.defineType('if', function (condition, type) {
   , size: function (value, struct) {
       return Struct.getValue(struct, condition) ? Struct.getSize(type, value, struct) : 0
     }
-  }
+  })
+})
+
+Struct.defineType('skip', function (size) {
+  return StructType({
+    read: function (opts) { opts.offset += size }
+  , write: function (opts) { opts.offset += size }
+  , size: size
+  })
 })
