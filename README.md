@@ -17,16 +17,17 @@ struct someStruct {
 }
 ```
 
-In Awestruct:
+With Awestruct:
 ```javascript
+var int32 = Struct.types.int32 // builtin types are defined on `Struct.types`.
+  , char = Struct.types.char
+
 var someStruct = Struct({
-  a: Struct.int32 // types are defined straight on Struct. If the type name conflicts with a method, you can access it through `Struct.types.int32` instead.
-, b: 'int32' // passing a string will look up a Type on `Struct.types`.
-, c: Struct.char(8) // Types can be functions returning `StructType`s.
+  a: int32
+, b: 'int32' // passing a string will look up a type on `Struct.types`.
+, c: char(8) // `char` is a function returning a `StructType`.
 })
 ```
-
-Usually the most common form will be the string form.
 
 ### Struct(descriptor)
 
@@ -44,24 +45,35 @@ var buffer = new Buffer([ 0x10, 0x20, 0x30 ])
 struct(buffer) //→ { a: 8208, b: 48 }
 ```
 
-#### Struct.defineType(name, type)
-
-Defines a named type. The `type` can be a `StructType`, a plain Object (which will be used to instantiate a `StructType`), or a function returning a `StructType`.
-
-These types can later be accessed on `Struct.types`, or `Struct`, or as a string in Struct Descriptors. (e.g. `Struct({ key: 'myType' })`)
-
-### StructType(type)
+### Struct.Type(type)
 
 Creates a Struct type object. `type` is an object:
 ```javascript
-StructType({
+var myType = StructType({
   read: function (opts) {
     // `opts.buf` is the Buffer to read from.
     // `opts.offset` is the current offset within the Buffer that's being read. Make sure to increment this appropriately when you're done reading.
     // `opts.struct` is the result Object of the entire Struct so far. You'll only want to use this with the Struct.get* methods, usually.
     // `opts.parent` is the parent result Object if there is a parent Struct. (as in `Struct({ sub: Struct({}) })`)
+    var val = opts.buf.readInt8(opts.offset)
+    opts.offset++
+    return val * 1000
   }
-, write: function (opts, buffer) {}
-, size: function (struct) {}
+, write: function (opts, val) {
+    opts.buf.writeInt8(Math.floor(val / 1000), opts.offset)
+    opts.offset++
+  }
+, size: function (val, struct) {
+    return 1 // always 1 byte, could also write as { size: 1 }
+  }
 })
+```
+
+Custom types can be used like so:
+```javascript
+var myStruct = Struct({
+  builtinType: 'uint8'
+, customType: myType
+})
+myStruct(new Buffer([ 5, 5 ])) //→ { builtinType: 5, customType: 5000 }
 ```

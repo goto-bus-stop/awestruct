@@ -1,4 +1,4 @@
-const StructType = require('./StructType')
+var StructType = require('./StructType')
 
 module.exports = Struct
 
@@ -25,7 +25,7 @@ function Struct(descriptor) {
       , struct = {}
       // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
       , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0, parent: struct.$parent }
-    
+
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
     // ```
     // Struct({
@@ -38,11 +38,11 @@ function Struct(descriptor) {
     // ```
     // Both ../size and /size need to access parent structs.
     struct.$parent = hasParent ? opts.struct : null
-    
+
     keys.forEach(function (key, i) {
       struct[key] = types[i].read(subOpts)
     })
-    
+
     // if we have a parent Struct, we also need to update its offset
     // so it continues reading in the right place
     if (hasParent) opts.offset = subOpts.offset
@@ -167,28 +167,7 @@ Struct.getType = function (type) {
 }
 
 /**
- * Defines a named type.
- * @param {string}          name       Name for this type.
- * @param {Object|function} definition Type definition: either a StructType-ish object,
- *    or a function that generates a StructType-ish object.
- */
-Struct.defineType = function (name, definition) {
-  var type
-  // type reader/writer generator, or a StructType
-  if (typeof definition === 'function' || definition.$structType) {
-    type = definition
-  }
-  // plain object with .read/.write
-  else {
-    type = StructType(definition)
-  }
-  
-  Struct.types[name] = type
-  if (!Struct[name]) Struct[name] = type
-}
-
-/**
- * Defines a type that maps straight to Buffer methods. 
+ * Defines a type that maps straight to Buffer methods.
  * Used internally for the different Number reading methods.
  * @param {string} name Name of the type.
  * @param {number} size Size of the type.
@@ -197,7 +176,7 @@ Struct.defineType = function (name, definition) {
  * @private
  */
 function defineBufferType(name, size, readName, writeName) {
-  Struct.defineType(name, {
+  Struct.types[name] = StructType({
     read: function (opts) {
       var result = opts.buf[readName](opts.offset)
       opts.offset += size
@@ -229,7 +208,7 @@ defineBufferType('floatbe',  4, 'readFloatBE',  'writeFloatBE')
 defineBufferType('doublebe', 8, 'readDoubleBE', 'writeDoubleBE')
 
 // 1 byte for 1 bit of information! efficiency!
-Struct.defineType('bool', {
+Struct.types.bool = StructType({
   read: function (opts) {
     var result = opts.buf[opts.offset] !== 0
     opts.offset++
@@ -242,7 +221,7 @@ Struct.defineType('bool', {
 , size: 1
 })
 
-Struct.defineType('array', function (size, type) {
+Struct.types.array = function (size, type) {
   var typeClass = Struct.getType(type)
   return StructType({
     read: function (opts) {
@@ -267,9 +246,9 @@ Struct.defineType('array', function (size, type) {
       return value.length ? Struct.getSize(type, value[0], struct) * value.length : 0
     }
   })
-})
+}
 
-Struct.defineType('char', function (size, encoding) {
+Struct.types.char = function (size, encoding) {
   if (!encoding) encoding = 'utf8'
   return StructType({
     read: function (opts) {
@@ -290,10 +269,10 @@ Struct.defineType('char', function (size, encoding) {
       return Struct.getValue(opts.struct, size)
     }
   })
-})
+}
 
 // conditional type
-Struct.defineType('if', function (condition, type) {
+Struct.types.if = function (condition, type) {
   return StructType({
     read: function (opts) {
       if (Struct.getValue(opts.struct, condition)) {
@@ -310,12 +289,12 @@ Struct.defineType('if', function (condition, type) {
       return Struct.getValue(struct, condition) ? Struct.getSize(type, value, struct) : 0
     }
   })
-})
+}
 
-Struct.defineType('skip', function (size) {
+Struct.types.skip = function (size) {
   return StructType({
     read: function (opts) { opts.offset += size }
   , write: function (opts) { opts.offset += size }
   , size: size
   })
-})
+}

@@ -44,3 +44,31 @@ describe('Struct types', function () {
   })
 
 })
+
+describe('Custom types', function () {
+
+  var myType = Struct.Type({
+    read: function (opts) {
+      var val = opts.buf.readInt8(opts.offset)
+      opts.offset++
+      return val * 1000
+    }
+  , write: function (opts, val) {
+      opts.buf.writeInt8(Math.floor(val / 1000), opts.offset)
+      opts.offset++
+    }
+  , size: function (val, struct) {
+      return 1
+    }
+  })
+
+  it('supports custom types', function () {
+    var myStruct = Struct({
+      builtinType: 'uint8'
+    , customType: myType
+    })
+
+    assert.deepEqual(myStruct(new Buffer([ 5, 5 ])), { builtinType: 5, customType: 5000 })
+  })
+
+})
