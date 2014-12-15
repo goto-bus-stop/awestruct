@@ -108,7 +108,7 @@ function descend(struct, key) {
 
 /**
  * @param {Object} struct Object to find a value on.
- * @param {*} value Value to find. If a string, used as a path inside the `struct`. If a function, gets called with `this = struct`. Else, used unchanged as the value.
+ * @param {*}      value  Value to find. If a string, used as a path inside the `struct`. If a function, gets called with `this = struct`. Else, used unchanged as the value.
  * @return {*}
  */
 Struct.getValue = function (struct, value) {
@@ -168,7 +168,7 @@ Struct.getType = function (type) {
 
 /**
  * Defines a named type.
- * @param {string} name Name for this type.
+ * @param {string}          name       Name for this type.
  * @param {Object|function} definition Type definition: either a StructType-ish object,
  *    or a function that generates a StructType-ish object.
  */
