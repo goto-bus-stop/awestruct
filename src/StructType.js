@@ -1,11 +1,11 @@
 module.exports = StructType
 
-function StructType(descr) {
+function StructType(descr, transforms) {
   var type = function () {
     return type.read.apply(type, arguments)
   }
-  var transforms = []
-  
+  transforms = transforms || []
+
   Object.keys(descr).forEach(function (key) {
     type[key] = descr[key]
   })
@@ -22,9 +22,8 @@ function StructType(descr) {
     return val
   }
   type.transform = function (fn) {
-    transforms.push(fn)
-    return type
+    return StructType(descr, transforms.concat([ fn ]))
   }
-  
+
   return type
 }
