@@ -45,6 +45,21 @@ var buffer = new Buffer([ 0x10, 0x20, 0x30 ])
 struct(buffer) //→ { a: 8208, b: 48 }
 ```
 
+#### Struct#field(name, type)
+
+Adds a field to the `Struct`. Useful if your code isn't going to always run on V8 (or other engines that accidentally keep object keys mostly in order of definition), or if you want to change the structure after the first instantiation.
+
+Note that this *mutates* the current Struct, and does not create a new one.
+
+```javascript
+var buffer = new Buffer([ 0x10, 0x20, 0x30 ])
+  , struct = Struct()
+    .field('a', 'uint16')
+    .field('b', 'uint8')
+
+struct(buffer) //→ { a: 8208, b: 48 }
+```
+
 ### Struct.Type(type)
 
 Creates a Struct type object. `type` is an object:
