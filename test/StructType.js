@@ -1,6 +1,29 @@
 var Struct = require('../src/Struct')
   , assert = require('assert')
 
+describe('Creating structs', function () {
+
+  var type = Struct.types.int8
+    , buf = Buffer([ 1, 2 ])
+
+  it('supports objects of name→type pairs', function () {
+    var struct = Struct({
+      name: type
+    , otherName: type
+    })
+    assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
+  })
+
+  it('supports .field(name, type)', function () {
+    var struct = Struct().field('name', type)
+    assert.deepEqual(struct(buf), { name: 1 })
+
+    struct.field('otherName', type)
+    assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
+  })
+
+})
+
 describe('Struct types', function () {
 
   var buf = new Buffer([ 10, 20 ])

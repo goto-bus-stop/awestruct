@@ -7,7 +7,7 @@ module.exports = Struct
  * @return {function()} Buffer decoding function, with StructType properties and an `.encode` method to encode Buffers.
  */
 function Struct(descriptor) {
-  var keys = Object.keys(descriptor)
+  var keys = descriptor ? Object.keys(descriptor) : []
   var types = keys.map(function (key) {
     return Struct.getType(descriptor[key])
   })
@@ -69,9 +69,8 @@ function Struct(descriptor) {
   var type = StructType({
     read: decode
   , write: function (opts, struct) {
-      keys.forEach(function (key) {
-        var type = Struct.getType(descriptor[key])
-        type.write(opts, struct[key])
+      keys.forEach(function (key, i) {
+        types[i].write(opts, struct[key])
       })
     }
   , size: function (struct) {
@@ -81,6 +80,11 @@ function Struct(descriptor) {
     }
   })
   type.encode = encode
+  type.field = function (name, fieldType) {
+    keys.push(name)
+    types.push(Struct.getType(fieldType))
+    return type
+  }
 
   return type
 }
