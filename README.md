@@ -92,3 +92,16 @@ var myStruct = Struct({
 })
 myStruct(new Buffer([ 5, 5 ])) //→ { builtinType: 5, customType: 5000 }
 ```
+
+#### Struct.Type#transform(function)
+
+Creates a new type that applies the given transform function.
+
+```javascript
+var int32 = Struct.types.int32
+var myStruct = Struct({
+  a: int32
+, b: int32.transform(num => num * 2)
+})
+myStruct(Buffer([ 5, 5 ])) //→ { a: 5, b: 10 }
+```
