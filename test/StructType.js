@@ -26,8 +26,8 @@ describe('Creating structs', function () {
 
 describe('Struct types', function () {
 
-  var buf = new Buffer([ 10, 20 ])
-    , write = new Buffer(1)
+  var buf = Buffer([ 10, 20 ])
+    , write = Buffer(1)
     , opts = { buf: buf, offset: 0 }
 
   var byte = Struct.types.uint8
@@ -71,9 +71,9 @@ describe('Struct types', function () {
 describe('Default types', function () {
 
   describe('ints', function () {
-    var buf = new Buffer([ 0xff
-                         , 0x39, 0x05
-                         , 0x00, 0xca, 0x9a, 0x3b ])
+    var buf = Buffer([ 0xff
+                     , 0x39, 0x05
+                     , 0x00, 0xca, 0x9a, 0x3b ])
       , ints = Struct({
           int8: 'int8'
         , int16: 'int16'
@@ -85,7 +85,7 @@ describe('Default types', function () {
   })
 
   describe('arrays', function () {
-    var buf = new Buffer([ 0x03, 0x01, 0x20, 0xff, 0x00 ])
+    var buf = Buffer([ 0x03, 0x01, 0x20, 0xff, 0x00 ])
       , array = Struct.types.array
 
     it('reads simple, constant length arrays', function () {
@@ -115,7 +115,7 @@ describe('Default types', function () {
   })
 
   describe('strings', function () {
-    var buf = new Buffer([ 0x68, 0x69, 0x20, 0x3a, 0x44 ])
+    var buf = Buffer([ 0x68, 0x69, 0x20, 0x3a, 0x44 ])
       , char = Struct.types.char
 
     it('reads strings', function () {
@@ -125,7 +125,7 @@ describe('Default types', function () {
   })
 
   describe('conditional', function () {
-    var buf = new Buffer([ 0x01, 0x00, 0x02, 0x03 ])
+    var buf = Buffer([ 0x01, 0x00, 0x02, 0x03 ])
       , _if = Struct.types.if
 
     it('supports basic conditional types', function () {
@@ -174,7 +174,16 @@ describe('Custom types', function () {
     , customType: myType
     })
 
-    assert.deepEqual(myStruct(new Buffer([ 5, 5 ])), { builtinType: 5, customType: 5000 })
+    assert.deepEqual(myStruct(Buffer([ 5, 5 ])), { builtinType: 5, customType: 5000 })
+  })
+
+  it('supports custom read-only types', function () {
+    var myStruct = Struct({
+      readonly: Struct.Type({
+        read: function () { return 10 }
+      })
+    })
+    assert.deepEqual(myStruct(Buffer(0)), { readonly: 10 })
   })
 
 })

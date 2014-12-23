@@ -25,5 +25,16 @@ function StructType(descr, transforms) {
     return StructType(descr, transforms.concat([ fn ]))
   }
 
+  if (type.write == null) {
+    type.write = function () {
+      throw new Error('unimplemented')
+    }
+  }
+  if (type.size == null) {
+    type.size = function () {
+      throw new Error('unimplemented')
+    }
+  }
+
   return type
 }
