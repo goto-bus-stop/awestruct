@@ -7,10 +7,15 @@ module.exports = Struct
  * @return {function()} Buffer decoding function, with StructType properties and an `.encode` method to encode Buffers.
  */
 function Struct(descriptor) {
-  var keys = descriptor ? Object.keys(descriptor) : []
-  var types = keys.map(function (key) {
-    return Struct.getType(descriptor[key])
-  })
+  var fields
+  if (descriptor) {
+    fields = Object.keys(descriptor).map(function (key) {
+      return { name: key, type: Struct.getType(descriptor[key]) }
+    })
+  }
+  else {
+    fields = []
+  }
 
   /**
    * Decodes a buffer into the object structure as described by this Struct.
@@ -39,8 +44,8 @@ function Struct(descriptor) {
     // Both ../size and /size need to access parent structs.
     struct.$parent = hasParent ? opts.struct : null
 
-    keys.forEach(function (key, i) {
-      struct[key] = types[i].read(subOpts)
+    fields.forEach(function (field) {
+      struct[field.name] = field.type.read(subOpts)
     })
 
     // if we have a parent Struct, we also need to update its offset
@@ -69,20 +74,19 @@ function Struct(descriptor) {
   var type = StructType({
     read: decode
   , write: function (opts, struct) {
-      keys.forEach(function (key, i) {
-        types[i].write(opts, struct[key])
+      fields.forEach(function (field, i) {
+        field.type.write(opts, struct[field.name])
       })
     }
   , size: function (struct) {
-      return keys.reduce(function (size, key) {
-        return size + Struct.getSize(descriptor[key], struct[key], struct)
+      return fields.reduce(function (size, field) {
+        return size + Struct.getSize(field.type, struct[field.name], struct)
       }, 0)
     }
   })
   type.encode = encode
   type.field = function (name, fieldType) {
-    keys.push(name)
-    types.push(Struct.getType(fieldType))
+    fields.push({ name: name, type: Struct.getType(fieldType) })
     return type
   }
 
