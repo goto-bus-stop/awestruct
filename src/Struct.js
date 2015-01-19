@@ -217,11 +217,11 @@ Struct.types.bool = StructType({
 , size: 1
 })
 
-Struct.types.array = function (size, type) {
+Struct.types.array = function (length, type) {
   var typeClass = getType(type)
   return StructType({
     read: function (opts) {
-      var l = getValue(opts.struct, size)
+      var l = getValue(opts.struct, length)
         , i
         , result = []
       for (i = 0; i < l; i++) {
@@ -230,17 +230,20 @@ Struct.types.array = function (size, type) {
       return result
     }
   , write: function (opts, value) {
-      var l = value.length
+      var l = getValue(opts.struct, length)
         , i
+      if (value.length !== l) {
+        throw new Error('cannot write incorrect array length, expected ' + l + ', got ' + value.length)
+      }
       for (i = 0; i < l; i++) {
         typeClass.write(opts, value[i])
       }
     }
-  , size: typeof size === 'number' ? function (value, struct) {
-      return size * getSize(type, value[0], struct)
-    } : function (value, struct) {
-      return value.length ? getSize(type, value[0], struct) * value.length : 0
-    }
+  , size: typeof length === 'number'
+      ? function (value, struct) { return length * getSize(type, value[0], struct) }
+      : function (value, struct) {
+        return value.length ? getSize(type, value[0], struct) * value.length : 0
+      }
   })
 }
 
