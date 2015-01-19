@@ -1,8 +1,11 @@
 module.exports = StructType
 
 function StructType(descr, transforms) {
-  var type = function () {
-    return type.read.apply(type, arguments)
+  var type = function (opts) {
+    if (Buffer.isBuffer(opts)) {
+      opts = { buf: opts, offset: 0 }
+    }
+    return type.read(opts)
   }
   transforms = transforms || []
 

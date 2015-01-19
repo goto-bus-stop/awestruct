@@ -26,14 +26,10 @@ function Struct(descriptor) {
    * @param {Object|Buffer} opts A Buffer to decode.
    */
   var decode = function (opts) {
-    if (Buffer.isBuffer(opts)) {
-      opts = { buf: opts }
-    }
-
     var hasParent = !!opts.struct
       , struct = {}
       // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
-      , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0, parent: struct.$parent }
+      , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0 }
 
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
     // ```
@@ -41,11 +37,11 @@ function Struct(descriptor) {
     //   size: 'int8',
     //   b: Struct({
     //     text1: Struct.char('../size'),
-    //     text2: Struct.char('/size')
+    //     text2: Struct.char('../size')
     //   })
     // })
     // ```
-    // Both ../size and /size need to access parent structs.
+    // Where ../size needs to access parent structs.
     struct.$parent = hasParent ? opts.struct : null
 
     fields.forEach(function (field) {
@@ -151,9 +147,9 @@ function getType(type) {
 /**
  * Defines a type that maps straight to Buffer methods.
  * Used internally for the different Number reading methods.
- * @param {string} name Name of the type.
- * @param {number} size Size of the type.
- * @param {string} readName Name of the reading method.
+ * @param {string} name      Name of the type.
+ * @param {number} size      Size of the type.
+ * @param {string} readName  Name of the reading method.
  * @param {string} writeName Name of the writing method.
  * @private
  */
@@ -258,16 +254,17 @@ Struct.types.char = function (size, encoding) {
 
 // conditional type
 Struct.types.if = function (condition, type) {
+  type = getType(type)
   return StructType({
     read: function (opts) {
       if (getValue(opts.struct, condition)) {
-        return getType(type).read(opts)
+        return type.read(opts)
       }
       return undefined
     }
   , write: function (opts, value) {
       if (getValue(opts.struct, condition)) {
-        getType(type).write(opts)
+        type.write(opts, value)
       }
     }
   , size: function (value, struct) {
