@@ -255,10 +255,14 @@ Struct.types.char = function (size, encoding) {
 // conditional type
 Struct.types.if = function (condition, type) {
   type = getType(type)
+  var elseType
   return StructType({
     read: function (opts) {
       if (getValue(opts.struct, condition)) {
         return type.read(opts)
+      }
+      else if (elseType) {
+        return elseType.read(opts)
       }
       return undefined
     }
@@ -266,9 +270,17 @@ Struct.types.if = function (condition, type) {
       if (getValue(opts.struct, condition)) {
         type.write(opts, value)
       }
+      else if (elseType) {
+        return elseType.write(opts, value)
+      }
     }
   , size: function (value, struct) {
       return getValue(struct, condition) ? type.size(value, struct) : 0
+    }
+    // additional methods
+  , else: function (type) {
+      elseType = getType(type)
+      return this
     }
   })
 }

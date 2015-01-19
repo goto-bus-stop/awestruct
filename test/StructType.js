@@ -46,6 +46,10 @@ describe('Struct types', function () {
     assert.equal(byte(opts), 20)
   })
 
+  it('can read from a plain old buffer', function () {
+    assert.equal(byte(buf), 10)
+  })
+
   it('transforms things', function () {
     var plus5 = byte.transform(function (a) { return a + 5 })
     assert.equal(plus5(opts), 15)
@@ -125,27 +129,42 @@ describe('Default types', function () {
   })
 
   describe('conditional', function () {
-    var buf = Buffer([ 0x01, 0x00, 0x02, 0x03 ])
-      , _if = Struct.types.if
+    var _if = Struct.types.if
+      , int8 = Struct.types.int8
+      , uint16 = Struct.types.uint16
+      , uint32 = Struct.types.uint32
 
     it('supports basic conditional types', function () {
+      var buf = Buffer([ 0x01, 0x00, 0x02, 0x03 ])
       var basicIf = Struct({
-        pTrue: 'int8'
-      , pFalse: 'int8'
-      , two: _if('pTrue', 'int8')
-      , next: 'int8'
+        pTrue: int8
+      , pFalse: int8
+      , two: _if('pTrue', int8)
+      , next: int8
       })
 
       assert.deepEqual(basicIf(buf), { pTrue: 1, pFalse: 0, two: 2, next: 3 })
 
       var basicFalse = Struct({
-        pTrue: 'int8'
-      , pFalse: 'int8'
-      , two: _if('pFalse', 'int8')
-      , next: 'int8'
+        pTrue: int8
+      , pFalse: int8
+      , two: _if('pFalse', int8)
+      , next: int8
       })
 
       assert.deepEqual(basicFalse(buf), { pTrue: 1, pFalse: 0, two: undefined, next: 2 })
+    })
+
+    it('supports .else', function () {
+      var buf = Buffer([ 1, 0xff, 0xff, 0xff, 0xff ])
+      var basicIfElse = Struct({
+        isLong: int8
+      , value: _if('isLong', uint32).else(uint16)
+      })
+
+      assert.deepEqual(basicIfElse(buf), { isLong: 1, value: 0xffffffff })
+      buf[0] = 0
+      assert.deepEqual(basicIfElse(buf), { isLong: 0, value: 0xffff })
     })
   })
 
