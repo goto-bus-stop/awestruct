@@ -35,6 +35,9 @@ function StructType(descr, transforms) {
       throw new Error('unimplemented')
     }
   }
+  else if (typeof type.size === 'number') {
+    type.size = function () { return descr.size }
+  }
 
   return type
 }

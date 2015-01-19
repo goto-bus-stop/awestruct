@@ -4,7 +4,6 @@ module.exports = Struct
 
 Struct.Type = StructType
 Struct.getValue = getValue
-Struct.getSize = getSize
 Struct.getType = getType
 
 /**
@@ -85,7 +84,7 @@ function Struct(descriptor) {
     }
   , size: function (struct) {
       return fields.reduce(function (size, field) {
-        return size + getSize(field.type, struct[field.name], struct)
+        return size + field.type.size(struct[field.name], struct)
       }, 0)
     }
   })
@@ -135,19 +134,6 @@ function getValue(struct, value) {
     return value.call(struct)
   }
   return value
-}
-
-/**
- * @param {StructType|string|function} type Type (class) of the value.
- *    Used to get the size (function) of the type.
- * @param {*} value Value for which to find the size.
- *    Used by eg. Structs that have arrays of dependent length inside.
- * @param {Object} struct Struct to operate on.
- *    Used by eg. arrays that have a dependent length.
- */
-function getSize(type, value, struct) {
-  var size = getType(type).size
-  return typeof size === 'function' ? size(value, struct) : size
 }
 
 /**
@@ -240,9 +226,9 @@ Struct.types.array = function (length, type) {
       }
     }
   , size: typeof length === 'number'
-      ? function (value, struct) { return length * getSize(type, value[0], struct) }
+      ? function (value, struct) { return length * type.size(value[0], struct) }
       : function (value, struct) {
-        return value.length ? getSize(type, value[0], struct) * value.length : 0
+        return value.length ? type.size(value[0], struct) * value.length : 0
       }
   })
 }
@@ -285,7 +271,7 @@ Struct.types.if = function (condition, type) {
       }
     }
   , size: function (value, struct) {
-      return getValue(struct, condition) ? getSize(type, value, struct) : 0
+      return getValue(struct, condition) ? type.size(value, struct) : 0
     }
   })
 }
