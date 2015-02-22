@@ -28,7 +28,7 @@ struct(buffer) //→ { a: 8208, b: 48 }
 
 Adds a field to the `Struct`. Useful if your code isn't going to always run on V8 (or other engines that accidentally keep object keys mostly in order of definition), or if you want to change the structure after the first instantiation.
 
-Note that this *mutates* the current Struct, and does not create a new one.
+Note that this *mutates* the current Struct, and does not create a new copy.
 
 ```javascript
 var buffer = Buffer([ 0x10, 0x20, 0x30 ])
@@ -40,16 +40,21 @@ var buffer = Buffer([ 0x10, 0x20, 0x30 ])
 struct(buffer) //→ { a: 8208, b: 48 }, same as above!
 ```
 
+#### struct(buffer, ?parent)
+
+Instances of `Struct()` can be called directly to read data from buffers. The first parameter is the
+Buffer you want to use. The second (optional) parameter is a parent object for the struct, as shown in [Value Paths](#valuepaths).
+
 ### Custom types: Struct.Type(type)
 
 Creates a Struct type object. `type` is an object:
 ```javascript
 var myType = Struct.Type({
-  read: function (opts) {
+  read: function (opts, parent) {
     // `opts.buf` is the Buffer to read from.
     // `opts.offset` is the current offset within the Buffer that's being read. Make sure to increment this appropriately when you're done reading.
     // `opts.struct` is the result Object of the entire Struct so far. You'll only want to use this with the Struct.get* methods, usually.
-    // `opts.parent` is the parent result Object if there is a parent Struct. (as in `Struct({ sub: Struct({}) })`)
+    // `parent` is the parent result Object if there is a parent Struct.
     var val = opts.buf.readInt8(opts.offset)
     opts.offset++
     return val * 1000
@@ -119,7 +124,7 @@ Struct({
 })(Buffer([ 3, 104, 105, 33 ])) → { len: 3, string: 'hi!' }
 ```
 
-A string path can be just a plain property name, or a bunch of property names separated by dots ('child.struct.key') to descend into child structs, and can also start with '../' to look back into a parent struct.
+A string path can be just a plain property name, or a bunch of property names separated by dots ('child.struct.key') to descend into child structs, and can also start with '../' to look back into a "parent" struct.
 
 ```javascript
 Struct({

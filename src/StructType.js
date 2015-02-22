@@ -5,7 +5,9 @@ function StructType(descr, transforms) {
     if (Buffer.isBuffer(opts)) {
       opts = { buf: opts, offset: 0 }
     }
-    return type.read(opts)
+    var args = [ opts ]
+    for (var i = 1; i < arguments.length; i++) args.push(arguments[i])
+    return type.read.apply(type, args)
   }
   transforms = transforms || []
 

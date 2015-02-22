@@ -25,11 +25,11 @@ function Struct(descriptor) {
    * Decodes a buffer into the object structure as described by this Struct.
    * @param {Object|Buffer} opts A Buffer to decode.
    */
-  var decode = function (opts) {
-    var hasParent = !!opts.struct
+  var decode = function (opts, parent) {
+    var hasParent = !!parent
       , struct = {}
       // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
-      , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0 }
+      , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0, parent: parent }
 
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
     // ```
@@ -42,10 +42,10 @@ function Struct(descriptor) {
     // })
     // ```
     // Where ../size needs to access parent structs.
-    struct.$parent = hasParent ? opts.struct : null
+    struct.$parent = hasParent ? parent : null
 
     fields.forEach(function (field) {
-      struct[field.name] = field.type.read(subOpts)
+      struct[field.name] = field.type.read(subOpts, parent)
     })
 
     // if we have a parent Struct, we also need to update its offset
