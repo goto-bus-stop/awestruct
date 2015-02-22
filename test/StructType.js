@@ -24,6 +24,26 @@ describe('Creating structs', function () {
 
 })
 
+describe('Value paths', function () {
+  var int8 = Struct.types.int8
+    , char = Struct.types.char
+
+  it('supports accessing parent structs', function () {
+    var struct = Struct({
+      size: int8,
+      b: Struct({
+        text1: char('../size'),
+        text2: char('../size')
+      })
+    })
+
+    assert.deepEqual(
+      struct(Buffer([ 2, 0x20, 0x20, 0x68, 0x69 ])),
+      { size: 2, b: { text1: '  ', text2: 'hi' } }
+    )
+  })
+})
+
 describe('Struct types', function () {
 
   var buf = Buffer([ 10, 20 ])
