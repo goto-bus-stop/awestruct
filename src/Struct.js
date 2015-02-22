@@ -34,10 +34,10 @@ function Struct(descriptor) {
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
     // ```
     // Struct({
-    //   size: 'int8',
+    //   size: int8,
     //   b: Struct({
-    //     text1: Struct.char('../size'),
-    //     text2: Struct.char('../size')
+    //     text1: char('../size'),
+    //     text2: char('../size')
     //   })
     // })
     // ```
@@ -45,7 +45,7 @@ function Struct(descriptor) {
     struct.$parent = hasParent ? parent : null
 
     fields.forEach(function (field) {
-      struct[field.name] = field.type.read(subOpts, parent)
+      struct[field.name] = field.type.read(subOpts, struct)
     })
 
     // if we have a parent Struct, we also need to update its offset
