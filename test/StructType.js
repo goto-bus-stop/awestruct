@@ -206,3 +206,27 @@ describe('Custom types', function () {
   })
 
 })
+
+describe('Fancy struct() features', function () {
+  var int8 = Struct.types.int8
+    , array = Struct.types.array
+
+  it('can take a parent object if no parent struct exists', function () {
+    var struct = Struct({
+      value: array('../length', int8)
+    })
+    var buffer = Buffer([ 0, 1, 2 ])
+
+    assert.throws(
+      function () {
+        struct(buffer)
+      },
+      /cannot access nonexistent parent/
+    )
+
+    assert.equal(
+      struct(buffer, { length: 2 }).value.length,
+      2
+    )
+  })
+})
