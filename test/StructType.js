@@ -24,6 +24,42 @@ describe('Creating structs', function () {
 
 })
 
+describe('Reading data', function () {
+  var int8 = Struct.types.int8
+    , array = Struct.types.array
+
+  it('continues reading *after* a nested struct', function () {
+    var struct = Struct({
+      nested: Struct({ value: int8 }),
+      value: int8
+    })
+
+    assert.deepEqual(struct(Buffer([ 1, 2 ])), { nested: { value: 1 }, value: 2 })
+  })
+
+  it('continues reading after a nested struct in a context-preserving container type', function () {
+    var struct = Struct({
+      array: array(1, Struct({ value: int8 })),
+      value: int8
+    })
+
+    assert.deepEqual(struct(Buffer([ 1, 2 ])), { array: [ { value: 1 } ], value: 2 })
+
+    struct = Struct({
+      size: int8,
+      array: array(1, Struct({
+        array: array('../size', int8)
+      }))
+    })
+
+    assert.deepEqual(struct(Buffer([ 1, 2 ])), {
+      size: 1,
+      array: [ { array: [ 2 ] } ]
+    })
+  })
+
+})
+
 describe('Value paths', function () {
   var int8 = Struct.types.int8
     , char = Struct.types.char

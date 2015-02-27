@@ -26,10 +26,9 @@ function Struct(descriptor) {
    * @param {Object|Buffer} opts A Buffer to decode.
    */
   var decode = function (opts, parent) {
-    var hasParent = !!parent
-      , struct = {}
+    var struct = {}
       // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
-      , subOpts = { struct: struct, buf: opts.buf, offset: hasParent ? opts.offset : 0, parent: parent }
+      , subOpts = { struct: struct, buf: opts.buf, offset: opts.offset || 0, parent: parent || null }
 
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
     // ```
@@ -42,15 +41,14 @@ function Struct(descriptor) {
     // })
     // ```
     // Where ../size needs to access parent structs.
-    struct.$parent = hasParent ? parent : null
+    struct.$parent = parent || null
 
     fields.forEach(function (field) {
       struct[field.name] = field.type.read(subOpts, struct)
     })
 
-    // if we have a parent Struct, we also need to update its offset
-    // so it continues reading in the right place
-    if (hasParent) opts.offset = subOpts.offset
+    // ensure that the parent continues reading in the right spot
+    opts.offset = subOpts.offset
 
     delete struct.$parent
 
@@ -202,12 +200,12 @@ Struct.types.bool = StructType({
 Struct.types.array = function (length, type) {
   var typeClass = getType(type)
   return StructType({
-    read: function (opts) {
+    read: function (opts, parent) {
       var l = getValue(opts.struct, length)
         , i
         , result = []
       for (i = 0; i < l; i++) {
-        result.push(typeClass.read(opts))
+        result.push(typeClass.read(opts, parent))
       }
       return result
     }
@@ -257,12 +255,12 @@ Struct.types.if = function (condition, type) {
   type = getType(type)
   var elseType
   return StructType({
-    read: function (opts) {
+    read: function (opts, parent) {
       if (getValue(opts.struct, condition)) {
-        return type.read(opts)
+        return type.read(opts, parent)
       }
       else if (elseType) {
-        return elseType.read(opts)
+        return elseType.read(opts, parent)
       }
       return undefined
     }
