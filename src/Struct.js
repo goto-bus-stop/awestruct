@@ -35,8 +35,8 @@ function Struct(descriptor) {
     // Struct({
     //   size: int8,
     //   b: Struct({
-    //     text1: char('../size'),
-    //     text2: char('../size')
+    //     text1: string('../size'),
+    //     text2: string('../size')
     //   })
     // })
     // ```
@@ -227,7 +227,7 @@ Struct.types.array = function (length, type) {
   })
 }
 
-Struct.types.char = function (size, encoding) {
+Struct.types.string = function (size, encoding) {
   if (!encoding) encoding = 'utf8'
   return StructType({
     read: function (opts) {
@@ -239,7 +239,7 @@ Struct.types.char = function (size, encoding) {
   , write: function (opts, value) {
       var length = getValue(opts.struct, size)
       if (value.length !== length) {
-        throw new Error('cannot write incorrect char size, expected ' + length + ', got ' + value.length)
+        throw new Error('cannot write incorrect string size, expected ' + length + ', got ' + value.length)
       }
       opts.buf.write(value, opts.offset, length, encoding)
       opts.offset += length
@@ -249,6 +249,9 @@ Struct.types.char = function (size, encoding) {
     }
   })
 }
+
+// compat <=0.9.2
+Struct.types.char = Struct.types.string
 
 // conditional type
 Struct.types.if = function (condition, type) {

@@ -101,7 +101,7 @@ These just map straight to the relevant `Buffer().read*()` methods. Number types
 
 #### Other common types
 
-* `char(n, encoding = 'utf8')` → Creates a type that decodes `n` bytes into a string with the given encoding (defaults to 'utf8')
+* `string(n, encoding = 'utf8')` → Creates a type that decodes `n` bytes into a string with the given encoding (defaults to 'utf8')
 * `array(n, type)` → Creates a type that reads `n` items of Struct.Type `type` into an `n`-length array.
 * `skip(n)` → Creates a type that skips `n` bytes and returns `undefined`.
 
@@ -120,7 +120,7 @@ Value paths take three forms:
 ```javascript
 Struct({
   len: int8
-, string: char('len')
+, string: string('len')
 })(Buffer([ 3, 104, 105, 33 ])) → { len: 3, string: 'hi!' }
 ```
 
