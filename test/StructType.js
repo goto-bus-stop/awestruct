@@ -144,6 +144,38 @@ describe('Default types', function () {
     })
   })
 
+  describe('buffers', function () {
+    var buffer = Struct.types.buffer
+
+    it('reads simple buffers', function () {
+      var buf = Buffer([ 0x00, 0x01, 0x02, 0x03 ])
+
+      var simpleBuffer = Struct({
+        a: buffer(2)
+      , b: buffer(2)
+      })
+
+      assert.deepEqual(simpleBuffer(buf), {
+        a: Buffer([ 0x00, 0x01 ])
+      , b: Buffer([ 0x02, 0x03 ])
+      })
+    })
+
+    it('creates a copy of the buffer contents', function () {
+      var buf = Buffer([ 0x00, 0x00, 0x00, 0x00 ])
+
+      var struct = Struct({ buffer: buffer(4) })
+
+      var copy = struct(buf)
+      copy.buffer[1] = 0x01
+      copy.buffer[3] = 0x02
+
+      // original remained unchanged
+      assert.deepEqual(buf, Buffer([ 0x00, 0x00, 0x00, 0x00 ]))
+      assert.deepEqual(copy.buffer, Buffer([ 0x00, 0x01, 0x00, 0x02 ]))
+    })
+  })
+
   describe('arrays', function () {
     var buf = Buffer([ 0x03, 0x01, 0x20, 0xff, 0x00 ])
       , array = Struct.types.array

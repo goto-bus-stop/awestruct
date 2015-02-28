@@ -197,6 +197,19 @@ Struct.types.bool = StructType({
 , size: 1
 })
 
+Struct.types.buffer = function (size) {
+  return Struct.Type({
+    read: function (opts) {
+      var length = Struct.getValue(opts.struct, size)
+        , result = new Buffer(length)
+      opts.buf.copy(result, 0, opts.offset, opts.offset + length)
+      opts.offset += length
+      return result
+    },
+    size: function (struct) { return Struct.getValue(struct, size) }
+  })
+}
+
 Struct.types.array = function (length, type) {
   var typeClass = getType(type)
   return StructType({
