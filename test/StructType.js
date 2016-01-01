@@ -106,16 +106,52 @@ describe('Struct types', function () {
     assert.equal(byte(buf), 10)
   })
 
-  it('transforms things', function () {
-    var plus5 = byte.transform(function (a) { return a + 5 })
+  it('supports transforming read values using a mapping function', function () {
+    var plus5 = byte.mapRead(function (a) { return a + 5 })
     assert.equal(plus5(opts), 15)
+
+    resetOffset()
+
+    // old-style:
+    var plus5Transform = byte.transform(function (a) { return a + 5 })
+    assert.equal(plus5Transform(opts), 15)
+  })
+
+  it('supports transforming values back when writing using a mapping function', function () {
+    var plus5 = byte.mapWrite(function (a) { return a - 5 })
+    plus5.write({ buf: write, offset: 0 }, 15)
+    assert.equal(write[0], 10)
+
+    resetOffset()
+
+    // shorthand:
+    var plus5Short = byte.map(function read(a) { return a + 5 }
+                             , function write(a) { return a - 5 })
+    var result = plus5Short(opts)
+    assert.equal(result, 15)
+    plus5Short.write({ buf: write, offset: 0 }, 15)
+    assert.equal(write[0], 10)
   })
 
   it('chains transforms', function () {
-    var plus5 = byte.transform(function (a) { return a + 5 })
-    var plus6 = plus5.transform(function (a) { return a + 1 })
+    var plus5 = byte.mapRead(function (a) { return a + 5 })
+    var plus6 = plus5.mapRead(function (a) { return a + 1 })
     assert.equal(plus5(opts), 15)
     assert.equal(plus6(opts), 26)
+  })
+
+  it('chains transforms', function () {
+    var plus5 = byte.map(function (a) { return a + 5 }
+                        , function (a) { return a - 5 })
+    var plus5Times2 = plus5.map(function (a) { return a * 2 }
+                               , function (a) { return a / 2 })
+    assert.equal(plus5(opts), 15)
+    resetOffset()
+    assert.equal(plus5Times2(opts), 30)
+    plus5.write({ buf: write, offset: 0 }, 15)
+    assert.equal(write[0], 10)
+    plus5Times2.write({ buf: write, offset: 0 }, 30)
+    assert.equal(write[0], 10)
   })
 
   it('creates a new type for transforms (issue #3)', function () {
