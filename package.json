@@ -1,9 +1,9 @@
 { "name": "awestruct"
 , "description": "Library for reading binary Buffer structures into objects in Node.js"
-, "version": "0.10.0"
+, "version": "0.11.0"
 , "license": "MIT"
 , "keywords": [ "buffer", "struct" ]
-, "bugs": "https://github.com/goto-bus-stop/node-awestruct/issues"
+, "bugs": "https://github.com/goto-bus-stop/awestruct/issues"
 , "author": "goto-bus-stop <rene@kooi.me>"
 , "main": "lib/Struct"
 , "repository": "goto-bus-stop/awestruct"
@@ -16,4 +16,5 @@
   , "mocha": "2.x" }
 , "scripts":
   { "build": "babel --presets es2015,stage-2 --out-dir lib src"
-  , "test": "mocha" } }
+  , "test": "mocha"
+  , "prepublish": "npm run build" } }
