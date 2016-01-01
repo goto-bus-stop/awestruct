@@ -5,7 +5,7 @@
 , "keywords": [ "buffer", "struct" ]
 , "bugs": "https://github.com/goto-bus-stop/node-awestruct/issues"
 , "author": "goto-bus-stop <rene@kooi.me>"
-, "main": "src/Struct"
+, "main": "lib/Struct"
 , "repository": "goto-bus-stop/awestruct"
 , "babel":
   { "presets": [ "es2015" ] }
