@@ -7,7 +7,12 @@
 , "author": "goto-bus-stop <rene@kooi.me>"
 , "main": "src/Struct"
 , "repository": "goto-bus-stop/awestruct"
+, "babel":
+  { "presets": [ "es2015" ] }
 , "devDependencies":
-  { "mocha": "2.x" }
+  { "babel-cli": ""
+  , "babel-preset-es2015": ""
+  , "mocha": "2.x" }
 , "scripts":
-  { "test": "mocha" } }
+  { "build": "babel --presets es2015 --out-dir lib src"
+  , "test": "mocha" } }

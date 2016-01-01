@@ -1,42 +1,34 @@
 module.exports = StructType
 
-function StructType(descr, mapRead, mapWrite) {
-  var type = function (opts) {
-    if (Buffer.isBuffer(opts)) {
-      opts = { buf: opts, offset: 0 }
-    }
-    var args = [ opts ]
-    for (var i = 1; i < arguments.length; i++) args.push(arguments[i])
-    return type.read.apply(type, args)
-  }
-  mapRead = mapRead || []
-  mapWrite = mapWrite || []
+function StructType(descr, mapRead = [], mapWrite = []) {
+  const type = (buf, ...rest) =>
+    type.read.apply(type,
+      [ Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf ]
+        .concat(rest)
+    )
 
-  Object.keys(descr).forEach(function (key) {
+  Object.keys(descr).forEach(key =>
     type[key] = descr[key]
-  })
+  )
 
   type.$structType = true
 
-  type.read = function () {
-    var val = descr.read.apply(type, arguments)
-      , i = 0
-      , l = mapRead.length
-    for (; i < l; i++) {
+  type.read = (...args) => {
+    let val = descr.read.apply(type, args)
+    for (let i = 0, l = mapRead.length; i < l; i++) {
       val = mapRead[i].call(type, val)
     }
     return val
   }
 
   if (type.write == null) {
-    type.write = function () {
+    type.write = () => {
       throw new Error('unimplemented')
     }
   } else {
-    type.write = function (opts, originalVal) {
-      var val = originalVal
-        , i = mapWrite.length - 1
-      for (; i >= 0; i--) {
+    type.write = (opts, originalVal) => {
+      let val = originalVal
+      for (let i = mapWrite.length - 1; i >= 0; i--) {
         val = mapWrite[i].call(type, val, opts)
       }
       return descr.write.call(type, opts, val)
@@ -44,24 +36,20 @@ function StructType(descr, mapRead, mapWrite) {
   }
 
   type.transform =
-  type.mapRead = function (fn) {
-    return StructType(descr, mapRead.concat([ fn ]), mapWrite)
-  }
-  type.mapWrite = function (fn) {
-    return StructType(descr, mapRead, mapWrite.concat([ fn ]))
-  }
-  type.map = function (read, write) {
-    return StructType(descr, read ? mapRead.concat([ read ]) : mapRead
-                           , write ? mapWrite.concat([ write ]) : mapWrite)
-  }
+  type.mapRead = fn =>
+    StructType(descr, [ ...mapRead, fn ], mapWrite)
+  type.mapWrite = fn =>
+    StructType(descr, mapRead, [ ...mapWrite, fn ])
+  type.map = (read, write) =>
+    StructType(descr, read ? [ ...mapRead, read ] : mapRead
+                    , write ? [ ...mapWrite, write ] : mapWrite)
 
   if (type.size == null) {
-    type.size = function () {
+    type.size = () => {
       throw new Error('unimplemented')
     }
-  }
-  else if (typeof type.size === 'number') {
-    type.size = function () { return descr.size }
+  } else if (typeof type.size === 'number') {
+    type.size = () => descr.size
   }
 
   return type

@@ -1,4 +1,4 @@
-var Struct = require('../src/Struct')
+var Struct = require('../lib/Struct')
   , assert = require('assert')
 
 describe('Creating structs', function () {
