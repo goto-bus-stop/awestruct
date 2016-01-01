@@ -1,3 +1,5 @@
+import { Buffer } from 'buffer'
+
 module.exports = StructType
 
 function StructType(descr, mapRead = [], mapWrite = []) {
