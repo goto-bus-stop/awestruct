@@ -6,8 +6,8 @@
 , "bugs": "https://github.com/goto-bus-stop/node-awestruct/issues"
 , "author": "goto-bus-stop <rene@kooi.me>"
 , "main": "src/Struct"
-, "repository":
-  { "type": "git"
-  , "url" : "http://github.com/goto-bus-stop/node-awestruct.git"
-  }
-}
+, "repository": "goto-bus-stop/awestruct"
+, "devDependencies":
+  { "mocha": "2.x" }
+, "scripts":
+  { "test": "mocha" } }
