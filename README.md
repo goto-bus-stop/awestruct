@@ -5,6 +5,31 @@ Library for reading binary Buffer structures into objects in Node.js
 
 [![NPM](https://nodei.co/npm/awestruct.png?compact=true)](https://nodei.co/npm/awestruct)
 
+## Usage Example
+
+```javascript
+import Struct, { types as t } from 'awestruct'
+// https://github.com/goto-bus-stop/genie-slp/
+const slpHeader = Struct({
+  version: t.string(4)
+, numFrames: t.int32
+, comment: t.string(24)
+
+, frames: t.array('numFrames', Struct({
+    cmdTableOffset: t.uint32
+  , outlineTableOffset: t.uint32
+  , paletteOffset: t.uint32
+  , properties: t.uint32
+
+  , width: t.int32
+  , height: t.int32
+  , hotspot: Struct({ x: t.int32, y: t.int32 })
+  }))
+})
+
+const headerContents = slpHeader(slpBuffer) // → { version: '1.00', ... }
+```
+
 ## API
 
 ### Struct(descriptor)
