@@ -2,16 +2,16 @@ import { Buffer } from 'buffer'
 
 module.exports = StructType
 
-function StructType(descr, mapRead = [], mapWrite = []) {
+function StructType (descr, mapRead = [], mapWrite = []) {
   const type = (buf, ...rest) =>
     type.read.apply(type,
       [ Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf ]
         .concat(rest)
     )
 
-  Object.keys(descr).forEach(key =>
+  Object.keys(descr).forEach((key) => {
     type[key] = descr[key]
-  )
+  })
 
   type.$structType = true
 
@@ -38,9 +38,9 @@ function StructType(descr, mapRead = [], mapWrite = []) {
   }
 
   type.transform =
-  type.mapRead = fn =>
+  type.mapRead = (fn) =>
     StructType(descr, [ ...mapRead, fn ], mapWrite)
-  type.mapWrite = fn =>
+  type.mapWrite = (fn) =>
     StructType(descr, mapRead, [ ...mapWrite, fn ])
   type.map = (read, write) =>
     StructType(descr, read ? [ ...mapRead, read ] : mapRead

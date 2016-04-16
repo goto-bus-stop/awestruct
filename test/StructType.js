@@ -1,15 +1,16 @@
+/* global it describe beforeEach */
+
 var Struct = require('../lib/Struct')
-  , assert = require('assert')
+var assert = require('assert')
 
 describe('Creating structs', function () {
-
   var type = Struct.types.int8
-    , buf = Buffer([ 1, 2 ])
+  var buf = Buffer([ 1, 2 ])
 
   it('supports objects of name→type pairs', function () {
     var struct = Struct({
-      name: type
-    , otherName: type
+      name: type,
+      otherName: type
     })
     assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
   })
@@ -21,12 +22,11 @@ describe('Creating structs', function () {
     struct.field('otherName', type)
     assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
   })
-
 })
 
 describe('Reading data', function () {
   var int8 = Struct.types.int8
-    , array = Struct.types.array
+  var array = Struct.types.array
 
   it('continues reading *after* a nested struct', function () {
     var struct = Struct({
@@ -57,19 +57,18 @@ describe('Reading data', function () {
       array: [ { array: [ 2 ] } ]
     })
   })
-
 })
 
 describe('Value paths', function () {
   var int8 = Struct.types.int8
-    , char = Struct.types.char
+  var string = Struct.types.string
 
   it('supports accessing parent structs', function () {
     var struct = Struct({
       size: int8,
       b: Struct({
-        text1: char('../size'),
-        text2: char('../size')
+        text1: string('../size'),
+        text2: string('../size')
       })
     })
 
@@ -81,14 +80,13 @@ describe('Value paths', function () {
 })
 
 describe('Struct types', function () {
-
   var buf = Buffer([ 10, 20 ])
-    , write = Buffer(1)
-    , opts = { buf: buf, offset: 0 }
+  var write = Buffer(1)
+  var opts = { buf: buf, offset: 0 }
 
   var byte = Struct.types.uint8
 
-  function resetOffset() { opts.offset = 0 }
+  function resetOffset () { opts.offset = 0 }
 
   beforeEach(resetOffset)
 
@@ -125,8 +123,10 @@ describe('Struct types', function () {
     resetOffset()
 
     // shorthand:
-    var plus5Short = byte.map(function read(a) { return a + 5 }
-                             , function write(a) { return a - 5 })
+    var plus5Short = byte.map(
+      function read (a) { return a + 5 },
+      function write (a) { return a - 5 }
+    )
     var result = plus5Short(opts)
     assert.equal(result, 15)
     plus5Short.write({ buf: write, offset: 0 }, 15)
@@ -141,10 +141,14 @@ describe('Struct types', function () {
   })
 
   it('chains transforms', function () {
-    var plus5 = byte.map(function (a) { return a + 5 }
-                        , function (a) { return a - 5 })
-    var plus5Times2 = plus5.map(function (a) { return a * 2 }
-                               , function (a) { return a / 2 })
+    var plus5 = byte.map(
+      function (a) { return a + 5 },
+      function (a) { return a - 5 }
+    )
+    var plus5Times2 = plus5.map(
+      function (a) { return a * 2 },
+      function (a) { return a / 2 }
+    )
     assert.equal(plus5(opts), 15)
     resetOffset()
     assert.equal(plus5Times2(opts), 30)
@@ -161,20 +165,20 @@ describe('Struct types', function () {
     resetOffset()
     assert.equal(evil16(opts), 'lol')
   })
-
 })
 
 describe('Default types', function () {
-
   describe('ints', function () {
-    var buf = Buffer([ 0xff
-                     , 0x39, 0x05
-                     , 0x00, 0xca, 0x9a, 0x3b ])
-      , ints = Struct({
-          int8: 'int8'
-        , int16: 'int16'
-        , int32: 'int32'
-        })
+    var buf = Buffer([
+      0xff,
+      0x39, 0x05,
+      0x00, 0xca, 0x9a, 0x3b
+    ])
+    var ints = Struct({
+      int8: 'int8',
+      int16: 'int16',
+      int32: 'int32'
+    })
     it('supports intXX', function () {
       assert.deepEqual(ints(buf), { int8: -1, int16: 1337, int32: 1000000000 })
     })
@@ -187,13 +191,13 @@ describe('Default types', function () {
       var buf = Buffer([ 0x00, 0x01, 0x02, 0x03 ])
 
       var simpleBuffer = Struct({
-        a: buffer(2)
-      , b: buffer(2)
+        a: buffer(2),
+        b: buffer(2)
       })
 
       assert.deepEqual(simpleBuffer(buf), {
-        a: Buffer([ 0x00, 0x01 ])
-      , b: Buffer([ 0x02, 0x03 ])
+        a: Buffer([ 0x00, 0x01 ]),
+        b: Buffer([ 0x02, 0x03 ])
       })
     })
 
@@ -214,7 +218,7 @@ describe('Default types', function () {
 
   describe('arrays', function () {
     var buf = Buffer([ 0x03, 0x01, 0x20, 0xff, 0x00 ])
-      , array = Struct.types.array
+    var array = Struct.types.array
 
     it('reads simple, constant length arrays', function () {
       var simpleArray = Struct({
@@ -225,26 +229,25 @@ describe('Default types', function () {
 
     it('reads variable length arrays', function () {
       var lengthArray = Struct({
-        len: 'int8'
-      , array: array('len', 'uint8')
+        len: 'int8',
+        array: array('len', 'uint8')
       })
       assert.deepEqual(lengthArray(buf), { len: 3, array: [ 1, 32, 255 ] })
     })
 
     it('can take a function to compute the length', function () {
       var lengthArray = Struct({
-        len: 'int8'
-      , len2: 'int8'
-      , array: array(function () { return this.len - this.len2 }, 'uint8')
+        len: 'int8',
+        len2: 'int8',
+        array: array(function () { return this.len - this.len2 }, 'uint8')
       })
       assert.deepEqual(lengthArray(buf), { len: 3, len2: 1, array: [ 32, 255 ] })
     })
-
   })
 
   describe('strings', function () {
     var buf = Buffer([ 0x68, 0x69, 0x20, 0x3a, 0x44 ])
-      , char = Struct.types.char
+    var char = Struct.types.char
 
     it('reads strings', function () {
       var string = Struct({ string: char(5) })
@@ -254,26 +257,26 @@ describe('Default types', function () {
 
   describe('conditional', function () {
     var _if = Struct.types.if
-      , int8 = Struct.types.int8
-      , uint16 = Struct.types.uint16
-      , uint32 = Struct.types.uint32
+    var int8 = Struct.types.int8
+    var uint16 = Struct.types.uint16
+    var uint32 = Struct.types.uint32
 
     it('supports basic conditional types', function () {
       var buf = Buffer([ 0x01, 0x00, 0x02, 0x03 ])
       var basicIf = Struct({
-        pTrue: int8
-      , pFalse: int8
-      , two: _if('pTrue', int8)
-      , next: int8
+        pTrue: int8,
+        pFalse: int8,
+        two: _if('pTrue', int8),
+        next: int8
       })
 
       assert.deepEqual(basicIf(buf), { pTrue: 1, pFalse: 0, two: 2, next: 3 })
 
       var basicFalse = Struct({
-        pTrue: int8
-      , pFalse: int8
-      , two: _if('pFalse', int8)
-      , next: int8
+        pTrue: int8,
+        pFalse: int8,
+        two: _if('pFalse', int8),
+        next: int8
       })
 
       assert.deepEqual(basicFalse(buf), { pTrue: 1, pFalse: 0, two: undefined, next: 2 })
@@ -282,8 +285,8 @@ describe('Default types', function () {
     it('supports .else', function () {
       var buf = Buffer([ 1, 0xff, 0xff, 0xff, 0xff ])
       var basicIfElse = Struct({
-        isLong: int8
-      , value: _if('isLong', uint32).else(uint16)
+        isLong: int8,
+        value: _if('isLong', uint32).else(uint16)
       })
 
       assert.deepEqual(basicIfElse(buf), { isLong: 1, value: 0xffffffff })
@@ -291,30 +294,28 @@ describe('Default types', function () {
       assert.deepEqual(basicIfElse(buf), { isLong: 0, value: 0xffff })
     })
   })
-
 })
 
 describe('Custom types', function () {
-
   var myType = Struct.Type({
     read: function (opts) {
       var val = opts.buf.readInt8(opts.offset)
       opts.offset++
       return val * 1000
-    }
-  , write: function (opts, val) {
+    },
+    write: function (opts, val) {
       opts.buf.writeInt8(Math.floor(val / 1000), opts.offset)
       opts.offset++
-    }
-  , size: function (val, struct) {
+    },
+    size: function (val, struct) {
       return 1
     }
   })
 
   it('supports custom types', function () {
     var myStruct = Struct({
-      builtinType: 'uint8'
-    , customType: myType
+      builtinType: 'uint8',
+      customType: myType
     })
 
     assert.deepEqual(myStruct(Buffer([ 5, 5 ])), { builtinType: 5, customType: 5000 })
@@ -328,12 +329,11 @@ describe('Custom types', function () {
     })
     assert.deepEqual(myStruct(Buffer(0)), { readonly: 10 })
   })
-
 })
 
 describe('Fancy struct() features', function () {
   var int8 = Struct.types.int8
-    , array = Struct.types.array
+  var array = Struct.types.array
 
   it('can take a parent object if no parent struct exists', function () {
     var struct = Struct({
