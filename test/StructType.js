@@ -62,6 +62,7 @@ describe('Reading data', function () {
 describe('Value paths', function () {
   var int8 = Struct.types.int8
   var string = Struct.types.string
+  var array = Struct.types.array
 
   it('supports accessing parent structs', function () {
     var struct = Struct({
@@ -75,6 +76,20 @@ describe('Value paths', function () {
     assert.deepEqual(
       struct(Buffer([ 2, 0x20, 0x20, 0x68, 0x69 ])),
       { size: 2, b: { text1: '  ', text2: 'hi' } }
+    )
+  })
+
+  it('can be a function', function () {
+    var struct = Struct({
+      size: int8,
+      doubleSizeArray: array(function (struct) {
+        return struct.size * 2
+      }, int8)
+    })
+
+    assert.deepEqual(
+      struct(Buffer([ 2, 0x20, 0x20, 0x68, 0x69 ])),
+      { size: 2, doubleSizeArray: [ 0x20, 0x20, 0x68, 0x69 ] }
     )
   })
 })

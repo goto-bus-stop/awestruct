@@ -162,15 +162,15 @@ Struct({
 })
 ```
 
-Functions will be called with the current (possibly incomplete) struct as `this`:
+Functions will be called with the current (possibly incomplete) struct in the first parameter:
 
 ```javascript
 Struct({
   child: Struct({
     data: t.array(100, t.uint8)
-  , whatever: t.if(() => {
-      this.data //→ array of 100 uint8s
-      this.$parent //→ the "parent" struct, like '../' in a path
+  , whatever: t.if((struct) => {
+      struct.data //→ array of 100 uint8s
+      struct.$parent //→ the "parent" struct, like '../' in a path
       return true
     }, uint8)
   })

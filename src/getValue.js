@@ -28,7 +28,7 @@ module.exports = function getValue (struct, value) {
     }
     return descend(struct, value)
   } else if (typeof value === 'function') {
-    return value.call(struct)
+    return value.call(struct, struct)
   }
   return value
 }
