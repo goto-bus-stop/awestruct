@@ -1,3 +1,13 @@
+0.12.0 / 2016-04-26
+===================
+
+ - pass current struct as the first parameter to function value paths,
+   so arrow functions can be used:
+
+   ```js
+   Struct.types.if((currentStruct) => currentStruct.shouldReadThisThing, ...)
+   ```
+
 0.11.1 / 2016-01-01
 ===================
 
