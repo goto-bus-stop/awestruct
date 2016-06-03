@@ -78,6 +78,17 @@ const buffer = (size) => StructType({
     opts.offset += length
     return result
   },
+  write (opts, value) {
+    if (!Buffer.isBuffer(value)) {
+      const valueType = Object.prototype.toString.call(null).replace(/^\[object (.+)\]$/, '$1')
+      throw new Error('cannot write value of incorrect type, expected Buffer, got ' + valueType)
+    }
+    const fieldLength = getValue(opts.struct, size)
+    const valueLength = Math.min(value.length, fieldLength)
+    value.copy(opts.buf, opts.offset, 0, valueLength)
+    opts.buf.fill(0, opts.offset + valueLength, opts.offset + fieldLength)
+    opts.offset += fieldLength
+  },
   size: (struct) => getValue(struct, size)
 })
 
