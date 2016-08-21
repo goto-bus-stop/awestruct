@@ -4,9 +4,9 @@ module.exports = StructType
 
 function StructType (descr, mapRead = [], mapWrite = []) {
   const type = (buf, ...rest) =>
-    type.read.apply(type,
-      [ Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf ]
-        .concat(rest)
+    type.read(
+      Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf,
+      ...rest
     )
 
   Object.keys(descr).forEach((key) => {

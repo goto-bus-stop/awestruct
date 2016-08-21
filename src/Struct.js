@@ -73,7 +73,7 @@ function Struct (descriptor) {
     return buf
   }
 
-  var type = StructType({
+  const type = StructType({
     read: decode,
     write (opts, struct) {
       fields.forEach((field) => {
