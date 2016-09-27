@@ -163,12 +163,27 @@ const skip = (size) => StructType({
 })
 
 const types = {
-  int8, uint8, bool,
-  int16, uint16, int16be, uint16be,
-  int32, uint32, int32be, uint32be,
-  float, floatbe, double, doublebe,
-  char, string, array, buffer,
-  when, if: when,
+  int8,
+  uint8,
+  bool,
+  int16,
+  uint16,
+  int16be,
+  uint16be,
+  int32,
+  uint32,
+  int32be,
+  uint32be,
+  float,
+  floatbe,
+  double,
+  doublebe,
+  char,
+  string,
+  array,
+  buffer,
+  when,
+  if: when,
   skip
 }
 
