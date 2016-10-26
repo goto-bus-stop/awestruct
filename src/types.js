@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import StructType from './StructType'
 import getValue from './getValue'
 
@@ -73,7 +74,7 @@ const bool = StructType({
 const buffer = (size) => StructType({
   read (opts) {
     const length = getValue(opts.struct, size)
-    const result = Buffer(length)
+    const result = Buffer.alloc ? Buffer.alloc(length) : new Buffer(length)
     opts.buf.copy(result, 0, opts.offset, opts.offset + length)
     opts.offset += length
     return result

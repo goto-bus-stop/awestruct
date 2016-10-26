@@ -1,3 +1,4 @@
+import { Buffer } from 'buffer'
 import StructType from './StructType'
 import { types, getType } from './types'
 import getValue from './getValue'
@@ -62,7 +63,7 @@ function Struct (descriptor) {
    */
   const encode = (struct) => {
     const size = type.size(struct)
-    const buf = Buffer(size)
+    const buf = Buffer.alloc ? Buffer.alloc(size) : new Buffer(size)
     const opts = {
       buf,
       offset: 0
