@@ -229,6 +229,27 @@ describe('Default types', function () {
       assert.deepEqual(buf, Buffer([ 0x00, 0x00, 0x00, 0x00 ]))
       assert.deepEqual(copy.buffer, Buffer([ 0x00, 0x01, 0x00, 0x02 ]))
     })
+
+    describe('writes buffers', function () {
+      var initialBuffer = Buffer([ 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 ])
+      var buffer5bytes = buffer(5)
+
+      it('writes from buffers of the same length', function () {
+        var opts = { offset: 2, buf: Buffer(initialBuffer) }
+        buffer5bytes.write(opts, Buffer([ 0xF3, 0xF4, 0xF5, 0xF6, 0xF7 ]))
+        assert.deepEqual(opts.buf, Buffer([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
+      })
+      it('writes from buffers longer than needed', function () {
+        var opts = { offset: 2, buf: Buffer(initialBuffer) }
+        buffer5bytes.write(opts, Buffer([ 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9 ]))
+        assert.deepEqual(opts.buf, Buffer([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
+      })
+      it('writes from buffers shorter than needed and zero-fills the rest', function () {
+        var opts = { offset: 2, buf: Buffer(initialBuffer) }
+        buffer5bytes.write(opts, Buffer([ 0xF3, 0xF4, 0xF5 ]))
+        assert.deepEqual(opts.buf, Buffer([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0x00, 0x00, 0x08, 0x09 ]))
+      })
+    })
   })
 
   describe('arrays', function () {
