@@ -1,3 +1,15 @@
+0.12.2 / 2017-01-18
+===================
+
+ - Make `buffer` type writable ([#16](https://github.com/goto-bus-stop/awestruct/pull/16)
+   by [@Iwasawafag](https://github.com/Iwasawafag))
+
+0.12.1 / 2016-10-26
+===================
+
+ - Use new Buffer APIs if available, for compatibility with Node v7+
+ - Upgrade dependencies
+
 0.12.0 / 2016-04-26
 ===================
 
