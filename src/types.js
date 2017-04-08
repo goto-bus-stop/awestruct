@@ -1,5 +1,4 @@
-import { Buffer } from 'buffer'
-import { alloc } from 'buffer-shims'
+import { Buffer } from 'safe-buffer'
 import StructType from './StructType'
 import getValue from './getValue'
 
@@ -75,7 +74,7 @@ const bool = StructType({
 const buffer = (size) => StructType({
   read (opts) {
     const length = getValue(opts.struct, size)
-    const result = alloc(length)
+    const result = Buffer.alloc(length)
     opts.buf.copy(result, 0, opts.offset, opts.offset + length)
     opts.offset += length
     return result

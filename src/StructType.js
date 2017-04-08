@@ -1,4 +1,4 @@
-import { Buffer } from 'buffer'
+import { Buffer } from 'safe-buffer'
 
 module.exports = StructType
 

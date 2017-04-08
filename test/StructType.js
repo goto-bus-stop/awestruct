@@ -2,7 +2,7 @@
 
 var Struct = require('../lib/Struct')
 var assert = require('assert')
-var Buffer = require('buffer-shims')
+var Buffer = require('safe-buffer').Buffer
 
 describe('Creating structs', function () {
   var type = Struct.types.int8

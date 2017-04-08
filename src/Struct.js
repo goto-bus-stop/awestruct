@@ -1,4 +1,4 @@
-import { alloc } from 'buffer-shims'
+import { Buffer } from 'safe-buffer'
 import StructType from './StructType'
 import { types, getType } from './types'
 import getValue from './getValue'
@@ -63,7 +63,7 @@ function Struct (descriptor) {
    */
   const encode = (struct) => {
     const size = type.size(struct)
-    const buf = alloc(size)
+    const buf = Buffer.alloc(size)
     const opts = {
       buf,
       offset: 0
