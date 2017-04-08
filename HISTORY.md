@@ -1,3 +1,8 @@
+0.12.3 / 2017-04-08
+===================
+
+ - Use `safe-buffer` module and remove `Buffer.alloc` feature detection.
+
 0.12.2 / 2017-01-18
 ===================
 
