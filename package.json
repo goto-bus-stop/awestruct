@@ -1,7 +1,7 @@
 {
   "name": "awestruct",
   "description": "Library for reading binary Buffer structures into objects in Node.js",
-  "version": "0.12.2",
+  "version": "0.12.3",
   "license": "MIT",
   "keywords": [
     "buffer",
