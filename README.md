@@ -1,6 +1,8 @@
 awestruct
 ---------
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/goto-bus-stop/awestruct.svg)](https://greenkeeper.io/)
+
 Library for reading binary Buffer structures into objects in Node.js
 
 [![NPM](https://nodei.co/npm/awestruct.png?compact=true)](https://nodei.co/npm/awestruct)
