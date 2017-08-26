@@ -62,6 +62,9 @@ function Struct (descriptor) {
    * @param {Object} struct The Object to encode.
    */
   const encode = (struct) => {
+    if (typeof struct !== 'object') {
+      throw new TypeError('Expected an object')
+    }
     const size = type.size(struct)
     const buf = Buffer.alloc(size)
     const opts = {
