@@ -1,6 +1,6 @@
-import { Buffer } from 'safe-buffer'
-import StructType from './StructType'
-import getValue from './getValue'
+const { Buffer } = require('safe-buffer')
+const StructType = require('./StructType')
+const getValue = require('./getValue')
 
 /**
  * @param {string|Object|function} type Type name to find, or a StructType-ish descriptor object.
@@ -169,9 +169,15 @@ const when = (condition, type) => {
 }
 
 const skip = (size) => StructType({
-  read (opts) { opts.offset += size },
-  write (opts) { opts.offset += size },
-  size
+  read (opts, struct) {
+    opts.offset += getValue(struct, size)
+  },
+  write (opts, struct) {
+    opts.offset += getValue(struct, size)
+  },
+  size (struct) {
+    return getValue(struct, size)
+  }
 })
 
 const types = {

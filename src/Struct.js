@@ -1,7 +1,7 @@
-import { Buffer } from 'safe-buffer'
-import StructType from './StructType'
-import { types, getType } from './types'
-import getValue from './getValue'
+const { Buffer } = require('safe-buffer')
+const StructType = require('./StructType')
+const { types, getType } = require('./types')
+const getValue = require('./getValue')
 
 /**
  * @param {Object} descriptor Object describing this Struct, like `{ key: type, key2: type2 }`
@@ -10,8 +10,13 @@ import getValue from './getValue'
 function Struct (descriptor) {
   let fields
   if (Array.isArray(descriptor)) {
-    fields = descriptor
-  } if (descriptor) {
+    fields = descriptor.map((field) => {
+      if (Array.isArray(field)) {
+        return [field[0], getType(field[1])]
+      }
+      return getType(field)
+    })
+  } else if (descriptor) {
     fields = Object.keys(descriptor).map((key) => [
       key,
       getType(descriptor[key])
@@ -47,7 +52,15 @@ function Struct (descriptor) {
     // Where ../size needs to access parent structs.
     struct.$parent = parent || null
 
-    fields.forEach(([ name, type ]) => {
+    fields.forEach((field) => {
+      let name = null
+      let type = null
+      if (Array.isArray(field)) {
+        [name, type] = field
+      } else {
+        type = field
+      }
+
       const value = type.read(subOpts, struct)
       if (name) {
         struct[name] = value
@@ -104,7 +117,11 @@ function Struct (descriptor) {
   })
   type.encode = encode
   type.field = (name, fieldType) => {
-    fields.push([name, getType(fieldType)])
+    if (typeof name === 'object') {
+      fields.push(getType(name))
+    } else {
+      fields.push([name, getType(fieldType)])
+    }
     return type
   }
 

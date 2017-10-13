@@ -1,4 +1,4 @@
-import { Buffer } from 'safe-buffer'
+const { Buffer } = require('safe-buffer')
 
 module.exports = StructType
 
@@ -54,5 +54,26 @@ function StructType (descr, mapRead = [], mapWrite = []) {
     type.size = () => descr.size
   }
 
+  // abstract-encoding
+  type.encode = encode
+  type.decode = decode
+  type.encodingLength = type.size
+
   return type
+
+  function encode (value, buffer, offset) {
+    if (!buffer) {
+      buffer = Buffer.alloc(type.size(value))
+    }
+    const opts = { buf: buffer, offset: offset }
+    const result = type.write(opts, value)
+    encode.bytes = opts.offset - offset
+    return result
+  }
+  function decode (buffer, start, end) {
+    const opts = { buf: buffer, offset: start }
+    const value = type.read(opts)
+    decode.bytes = opts.offset - start
+    return value
+  }
 }
