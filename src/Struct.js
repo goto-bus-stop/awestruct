@@ -81,31 +81,37 @@ function Struct (descriptor) {
    * Encodes an object into a Buffer as described by this Struct.
    * @param {Object} struct The Object to encode.
    */
-  const encode = (struct) => {
+  const encode = (struct, buffer) => {
     if (typeof struct !== 'object') {
       throw new TypeError('Expected an object')
     }
+
     const size = type.size(struct)
-    const buf = Buffer.alloc(size)
     const opts = {
-      buf,
+      struct,
+      buf: buffer || Buffer.alloc(size),
       offset: 0
     }
 
     type.write(opts, struct)
 
-    return buf
+    return opts.buf
   }
 
   const type = StructType({
     read: decode,
     write (opts, struct) {
-      fields.forEach(([ name, type ]) => {
-        if (name) {
-          type.write(opts, struct[name])
+      fields.forEach((field) => {
+        let name = null
+        let type = null
+        if (Array.isArray(field)) {
+          [name, type] = field
         } else {
-          type.write(opts, struct)
+          type = field
         }
+
+        const value = name ? struct[name] : struct
+        type.write(opts, value)
       })
     },
     size (struct) {
