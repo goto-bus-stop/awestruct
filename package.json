@@ -11,24 +11,18 @@
   "author": "goto-bus-stop <rene@kooi.me>",
   "main": "lib/Struct",
   "repository": "goto-bus-stop/awestruct",
-  "babel": {
-    "presets": [
-      "es2015"
-    ]
-  },
   "dependencies": {
     "safe-buffer": "^5.0.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.3.17",
-    "babel-preset-es2015": "^6.3.13",
     "babel-preset-stage-2": "^6.3.13",
+    "buble": "^0.16.0",
     "mocha": "^4.0.0",
     "standard": "^10.0.0"
   },
   "scripts": {
-    "build": "babel --presets es2015,stage-2 --out-dir lib src",
-    "test": "mocha && standard src/**/*.js test/**/*.js",
+    "build": "buble src -o lib",
+    "test": "mocha -r buble/register && standard src/**/*.js test/**/*.js",
     "prepublish": "npm run build"
   }
 }

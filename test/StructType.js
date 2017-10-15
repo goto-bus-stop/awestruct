@@ -1,6 +1,6 @@
 /* global it describe beforeEach */
 
-var Struct = require('../lib/Struct')
+var Struct = require('../src/Struct')
 var assert = require('assert')
 var Buffer = require('safe-buffer').Buffer
 
