@@ -14,7 +14,7 @@ function Struct (descriptor) {
       if (Array.isArray(field)) {
         return [field[0], getType(field[1])]
       }
-      return getType(field)
+      return [null, getType(field)]
     })
   } else if (descriptor) {
     fields = Object.keys(descriptor).map((key) => [
@@ -52,17 +52,9 @@ function Struct (descriptor) {
     // Where ../size needs to access parent structs.
     struct.$parent = parent || null
 
-    fields.forEach((field) => {
-      let name = null
-      let type = null
-      if (Array.isArray(field)) {
-        [name, type] = field
-      } else {
-        type = field
-      }
-
+    fields.forEach(([name, type]) => {
       const value = type.read(subOpts, struct)
-      if (name) {
+      if (name !== null) {
         struct[name] = value
       } else if (typeof value === 'object') {
         Object.assign(struct, value)
@@ -101,22 +93,14 @@ function Struct (descriptor) {
   const type = StructType({
     read: decode,
     write (opts, struct) {
-      fields.forEach((field) => {
-        let name = null
-        let type = null
-        if (Array.isArray(field)) {
-          [name, type] = field
-        } else {
-          type = field
-        }
-
-        const value = name ? struct[name] : struct
+      fields.forEach(([ name, type ]) => {
+        const value = name !== null ? struct[name] : struct
         type.write(opts, value)
       })
     },
     size (struct) {
       return fields.reduce(
-        (size, [ name, type ]) => size + type.size(struct[name], struct),
+        (size, [ name, type ]) => size + type.size(name !== null ? struct[name] : struct, struct),
         0
       )
     }
@@ -124,7 +108,7 @@ function Struct (descriptor) {
   type.encode = encode
   type.field = (name, fieldType) => {
     if (typeof name === 'object') {
-      fields.push(getType(name))
+      fields.push([null, getType(name)])
     } else {
       fields.push([name, getType(fieldType)])
     }
