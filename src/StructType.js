@@ -3,11 +3,12 @@ const { Buffer } = require('safe-buffer')
 module.exports = StructType
 
 function StructType (descr, mapRead = [], mapWrite = []) {
-  const type = (buf, ...rest) =>
-    type.read(
+  const type = function read (buf, ...rest) {
+    return type.read(
       Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf,
       ...rest
     )
+  }
 
   Object.keys(descr).forEach((key) => {
     type[key] = descr[key]
