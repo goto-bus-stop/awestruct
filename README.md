@@ -1,31 +1,35 @@
-awestruct
----------
+# awestruct
 
-Library for reading binary Buffer structures into objects in Node.js
+Library for reading complex binary Buffer structures into objects in Node.js
 
 [![NPM](https://nodei.co/npm/awestruct.png?compact=true)](https://nodei.co/npm/awestruct)
 
 ## Usage Example
 
-```javascript
-import Struct, { types as t } from 'awestruct'
+```js
+const Struct = require('awestruct')
+const t = Struct.types
+
 // https://github.com/goto-bus-stop/genie-slp/
-const slpHeader = Struct({
-  version: t.string(4)
-, numFrames: t.int32
-, comment: t.string(24)
+const slpHeader = Struct([
+  ['version', t.string(4)],
+  ['numFrames', t.int32],
+  ['comment', t.string(24)],
 
-, frames: t.array('numFrames', Struct({
-    cmdTableOffset: t.uint32
-  , outlineTableOffset: t.uint32
-  , paletteOffset: t.uint32
-  , properties: t.uint32
+  ['frames', t.array('numFrames', Struct([
+    ['cmdTableOffset', t.uint32],
+    ['outlineTableOffset', t.uint32],
+    ['paletteOffset', t.uint32],
+    ['properties', t.uint32],
 
-  , width: t.int32
-  , height: t.int32
-  , hotspot: Struct({ x: t.int32, y: t.int32 })
-  }))
-})
+    ['width', t.int32],
+    ['height', t.int32],
+    ['hotspot', Struct([
+      ['x', t.int32],
+      ['y', t.int32]
+    ])]
+  ]))]
+])
 
 const headerContents = slpHeader(slpBuffer) // → { version: '1.00', ... }
 ```
@@ -38,31 +42,47 @@ Creates a new `Struct` function that reads from `Buffer`s according to the descr
 
 `descriptor` is a Struct Descriptor. For example:
 
-```javascript
-var buffer = Buffer([ 0x10, 0x20, 0x30 ])
-  , t = Struct.types
-  , struct = Struct({
-      a: t.uint16
-    , b: t.uint8
-    })
+```js
+var buffer = Buffer.from([ 0x10, 0x20, 0x30 ])
+var t = Struct.types
+var struct = Struct([
+  ['a', t.uint16],
+  ['b', t.uint8]
+])
 
 struct(buffer) //→ { a: 8208, b: 48 }
 ```
 
-#### Struct#field(name, type)
+A struct descriptor is an array of fields. A field can either be an array with two elements, `[name, type]`, or an unnamed raw `type`.
+Unnamed types are useful if there is some padding you need to skip.
 
-Adds a field to the `Struct`. Useful if your code isn't going to always run on V8 (or other engines that accidentally keep object keys mostly in order of definition), or if you want to change the structure after the first instantiation.
+If an unnamed type reads another struct, it is merged into the current one. For example:
 
-Note that this *mutates* the current Struct, and does not create a new copy.
+```js
+var struct = Struct([
+  ['needToReadThing', t.int8],
+  t.skip(3), // padding
+  t.if('needToReadThing', Struct([
+    ['value1', t.int8],
+    ['value2', t.int8],
+  ]))
+])
+```
 
-```javascript
-var buffer = Buffer([ 0x10, 0x20, 0x30 ])
-  , t = Struct.types
-  , struct = Struct()
-    .field('a', t.uint16)
-    .field('b', t.uint8)
+Now, if the `buffer`'s first byte is zero, `struct(buffer)` will return an object like:
 
-struct(buffer) //→ { a: 8208, b: 48 }, same as above!
+```js
+{ needToReadThing: 0 }
+```
+
+But if it is nonzero, `struct(buffer)` will return an object of this shape:
+
+```js
+{
+  needToReadThing: 1,
+  value1: 43,
+  value2: 76
+}
 ```
 
 #### struct(buffer, ?parent)
@@ -70,10 +90,25 @@ struct(buffer) //→ { a: 8208, b: 48 }, same as above!
 Instances of `Struct()` can be called directly to read data from buffers. The first parameter is the
 Buffer you want to use. The second (optional) parameter is a parent object for the struct, as shown in [Value Paths](#valuepaths).
 
+#### struct.decode(buffer)
+
+`abstract-encoding` compatible.
+
+#### struct.encode(value[, buffer]\[, start = 0])
+
+Encode `value` into a `buffer`. Start writing at offset `start`. If no `buffer` is given, awestruct allocates one.
+`abstract-encoding` compatible.
+
+#### struct.encodingLength(value)
+
+Return the size in bytes that would be necessary to encode `value`.
+`abstract-encoding` compatible.
+
 ### Custom types: Struct.Type(type)
 
 Creates a Struct type object. `type` is an object:
-```javascript
+
+```js
 var myType = Struct.Type({
   read: function (opts, parent) {
     // `opts.buf` is the Buffer to read from.
@@ -83,33 +118,34 @@ var myType = Struct.Type({
     var val = opts.buf.readInt8(opts.offset)
     opts.offset++
     return val * 1000
-  }
-, size: function (val, struct) {
+  },
+  size: function (val, struct) {
     return 1 // always 1 byte, could also write as { size: 1 }
   }
 })
 ```
 
 Custom types can be used like so:
-```javascript
-var myStruct = Struct({
-  builtinType: Struct.types.uint8
-, customType: myType
-})
-myStruct(Buffer([ 5, 5 ])) //→ { builtinType: 5, customType: 5000 }
+
+```js
+var myStruct = Struct([
+  ['builtinType', Struct.types.uint8],
+  ['customType', myType]
+])
+myStruct(Buffer.from([ 5, 5 ])) //→ { builtinType: 5, customType: 5000 }
 ```
 
-#### Struct.Type#transform(function)
+#### Struct.Type#mapRead(function)
 
 Creates a new type that applies the given transform function when reading values.
 
-```javascript
+```js
 var int32 = Struct.types.int32
-var myStruct = Struct({
-  a: int32
-, b: int32.transform(num => num * 2)
-})
-myStruct(Buffer([ 5, 5 ])) //→ { a: 5, b: 10 }
+var myStruct = Struct([
+  ['a', int32],
+  ['b', int32.mapRead(num => num * 2)]
+])
+myStruct(Buffer.from([ 5, 5 ])) //→ { a: 5, b: 10 }
 ```
 
 ### Builtin Types
@@ -132,47 +168,56 @@ These just map straight to the relevant `Buffer().read*()` methods. Number types
 
 The `n` parameter in each of those is a Value Path.
 
+#### Conditional types
+
+* `if(condition, type)` → Creates a type that decodes `type` if the `condition` Value Path is truthy.
+  `if()` types also have an `.else(type)` method, to specify a `type` to decode if the `condition` is falsy.
+
+  ```js
+  t.if('is32bit', t.int32).else(t.int16)
+  ```
+
 ### Value Paths
 
-Value paths are used to pass values to some type readers. Value paths can just be numbers, or depend on other values in the struct.
+Value paths are used to pass values to some type readers, particularly lengths. Value paths can be raw numbers, or depend on other values in the struct.
 
 Value paths take three forms:
 
-* Numbers: nothing fancy, produces the given number.
+* Numbers: produces the given number.
 * Strings: looks up the value at the given path.
 * Functions: takes the return value of the function.
 
-```javascript
-Struct({
-  len: int8
-, string: string('len')
-})(Buffer([ 3, 104, 105, 33 ])) → { len: 3, string: 'hi!' }
+```js
+Struct([
+  ['len', int8],
+  ['string', string('len')]
+])(Buffer.from([ 3, 104, 105, 33 ])) → { len: 3, string: 'hi!' }
 ```
 
-A string path can be just a plain property name, or a bunch of property names separated by dots ('child.struct.key') to descend into child structs, and can also start with '../' to look back into a "parent" struct.
+A string path can be a plain property name, or a bunch of property names separated by dots ('child.struct.key') to descend into child structs, and can also start with '../' to look back into a "parent" struct.
 
-```javascript
-Struct({
-  otherArrayLength: t.int8
-, subStruct: Struct({
-    irrelevantDataLength: t.int32
-  , array: t.array('../otherArrayLength', t.int8)
-  })
-, irrelevant: t.skip('subStruct.irrelevantDataLength')
-})
+```js
+Struct([
+  ['otherArrayLength', t.int8],
+  ['subStruct', Struct([
+    ['irrelevantDataLength', t.int32],
+    ['array', t.array('../otherArrayLength', t.int8)]
+  ])]
+  t.skip('subStruct.irrelevantDataLength')
+])
 ```
 
 Functions will be called with the current (possibly incomplete) struct in the first parameter:
 
-```javascript
-Struct({
-  child: Struct({
-    data: t.array(100, t.uint8)
-  , whatever: t.if((struct) => {
+```js
+Struct([
+  ['child', Struct([
+    ['data', t.array(100, t.uint8)],
+    ['whatever', t.if((struct) => {
       struct.data //→ array of 100 uint8s
       struct.$parent //→ the "parent" struct, like '../' in a path
       return true
-    }, uint8)
-  })
-})
+    }, uint8)]
+  ])]
+])
 ```

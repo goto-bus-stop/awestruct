@@ -1,8 +1,9 @@
 /* global it describe beforeEach */
 
-var Struct = require('../lib/Struct')
+var Struct = require('../src/Struct')
 var assert = require('assert')
 var Buffer = require('safe-buffer').Buffer
+var match = require('varstruct-match')
 
 describe('Creating structs', function () {
   var type = Struct.types.int8
@@ -25,33 +26,86 @@ describe('Creating structs', function () {
   })
 })
 
+describe('Array definition', function (t) {
+  var int8 = Struct.types.int8
+  var skip = Struct.types.skip
+  var when = Struct.types.if
+
+  it('can receive an array of name,type pairs', function () {
+    var struct = Struct([
+      ['a', int8],
+      ['b', int8],
+      ['c', int8]
+    ])
+
+    assert.deepEqual(struct(Buffer.from([ 1, 2, 3 ])), {
+      a: 1,
+      b: 2,
+      c: 3
+    })
+  })
+
+  it('can specify unnamed types', function () {
+    var struct = Struct([
+      ['a', int8],
+      skip('a'),
+      ['b', int8]
+    ])
+
+    assert.deepEqual(struct(Buffer.from([ 2, 0, 0, 5 ])), {
+      a: 2,
+      b: 5
+    })
+  })
+
+  it('merges structs read by unnamed types into the parent', function () {
+    var struct = Struct([
+      ['a', int8],
+      when('a', Struct([
+        Struct([
+          ['c', int8]
+        ])
+      ]))
+    ])
+
+    assert.deepEqual(struct(Buffer.from([ 1, 3 ])), {
+      a: 1,
+      c: 3
+    })
+  })
+})
+
 describe('Reading data', function () {
   var int8 = Struct.types.int8
   var array = Struct.types.array
 
   it('continues reading *after* a nested struct', function () {
-    var struct = Struct({
-      nested: Struct({ value: int8 }),
-      value: int8
-    })
+    var struct = Struct([
+      ['nested', Struct([
+        ['value', int8]
+      ])],
+      ['value', int8]
+    ])
 
     assert.deepEqual(struct(Buffer.from([ 1, 2 ])), { nested: { value: 1 }, value: 2 })
   })
 
   it('continues reading after a nested struct in a context-preserving container type', function () {
-    var struct = Struct({
-      array: array(1, Struct({ value: int8 })),
-      value: int8
-    })
+    var struct = Struct([
+      ['array', array(1, Struct([
+        ['value', int8]
+      ]))],
+      ['value', int8]
+    ])
 
     assert.deepEqual(struct(Buffer.from([ 1, 2 ])), { array: [ { value: 1 } ], value: 2 })
 
-    struct = Struct({
-      size: int8,
-      array: array(1, Struct({
-        array: array('../size', int8)
-      }))
-    })
+    struct = Struct([
+      ['size', int8],
+      ['array', array(1, Struct([
+        ['array', array('../size', int8)]
+      ]))]
+    ])
 
     assert.deepEqual(struct(Buffer.from([ 1, 2 ])), {
       size: 1,
@@ -66,13 +120,13 @@ describe('Value paths', function () {
   var array = Struct.types.array
 
   it('supports accessing parent structs', function () {
-    var struct = Struct({
-      size: int8,
-      b: Struct({
-        text1: string('../size'),
-        text2: string('../size')
-      })
-    })
+    var struct = Struct([
+      ['size', int8],
+      ['b', Struct([
+        ['text1', string('../size')],
+        ['text2', string('../size')]
+      ])]
+    ])
 
     assert.deepEqual(
       struct(Buffer.from([ 2, 0x20, 0x20, 0x68, 0x69 ])),
@@ -81,12 +135,12 @@ describe('Value paths', function () {
   })
 
   it('can be a function', function () {
-    var struct = Struct({
-      size: int8,
-      doubleSizeArray: array(function (struct) {
+    var struct = Struct([
+      ['size', int8],
+      ['doubleSizeArray', array(function (struct) {
         return struct.size * 2
-      }, int8)
-    })
+      }, int8)]
+    ])
 
     assert.deepEqual(
       struct(Buffer.from([ 2, 0x20, 0x20, 0x68, 0x69 ])),
@@ -389,5 +443,37 @@ describe('Fancy struct() features', function () {
       struct(buffer, { length: 2 }).value.length,
       2
     )
+  })
+})
+
+describe('abstract-encoding', function () {
+  var int8 = Struct.types.int8
+  var string = Struct.types.string
+
+  it('exposes an abstract-encoding interface', function () {
+    var struct = Struct([
+      ['a', int8],
+      ['b', int8]
+    ])
+
+    var buffer = struct.encode({ a: 1, b: 2 })
+    assert.deepEqual(buffer, Buffer.from([ 1, 2 ]))
+    assert.equal(struct.encode.bytes, 2)
+
+    assert.deepEqual(struct.decode(buffer), { a: 1, b: 2 })
+    assert.equal(struct.decode.bytes, 2)
+    assert.equal(struct.encodingLength({ a: 0, b: 0 }), 2)
+  })
+
+  it('can use abstract-encoding codecs as struct types', function () {
+    var struct = Struct([
+      ['value', match(int8, [
+        { match: 1, type: int8, test: function (arg) { return typeof arg === 'number' } },
+        { match: 7, type: string(4), test: function (arg) { return typeof arg === 'string' } }
+      ])]
+    ])
+
+    assert.deepEqual(struct.encode({ value: 10 }), Buffer.from([ 1, 10 ]))
+    assert.deepEqual(struct.encode({ value: 'aaaa' }), Buffer.from([ 7, 0x61, 0x61, 0x61, 0x61 ]))
   })
 })

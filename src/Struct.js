@@ -1,7 +1,6 @@
-import { Buffer } from 'safe-buffer'
-import StructType from './StructType'
-import { types, getType } from './types'
-import getValue from './getValue'
+const StructType = require('./StructType')
+const { types, getType } = require('./types')
+const getValue = require('./getValue')
 
 /**
  * @param {Object} descriptor Object describing this Struct, like `{ key: type, key2: type2 }`
@@ -10,8 +9,13 @@ import getValue from './getValue'
 function Struct (descriptor) {
   let fields
   if (Array.isArray(descriptor)) {
-    fields = descriptor
-  } if (descriptor) {
+    fields = descriptor.map((field) => {
+      if (Array.isArray(field)) {
+        return [field[0], getType(field[1])]
+      }
+      return [null, getType(field)]
+    })
+  } else if (descriptor) {
     fields = Object.keys(descriptor).map((key) => [
       key,
       getType(descriptor[key])
@@ -47,9 +51,9 @@ function Struct (descriptor) {
     // Where ../size needs to access parent structs.
     struct.$parent = parent || null
 
-    fields.forEach(([ name, type ]) => {
+    fields.forEach(([name, type]) => {
       const value = type.read(subOpts, struct)
-      if (name) {
+      if (name !== null) {
         struct[name] = value
       } else if (typeof value === 'object') {
         Object.assign(struct, value)
@@ -64,32 +68,14 @@ function Struct (descriptor) {
     return struct
   }
 
-  /**
-   * Encodes an object into a Buffer as described by this Struct.
-   * @param {Object} struct The Object to encode.
-   */
-  const encode = (struct) => {
-    if (typeof struct !== 'object') {
-      throw new TypeError('Expected an object')
-    }
-    const size = type.size(struct)
-    const buf = Buffer.alloc(size)
-    const opts = {
-      buf,
-      offset: 0
-    }
-
-    type.write(opts, struct)
-
-    return buf
-  }
-
   const type = StructType({
     read: decode,
     write (opts, struct) {
       fields.forEach(([ name, type ]) => {
-        if (name) {
-          type.write(opts, struct[name])
+        if (name !== null) {
+          const value = struct[name]
+          if (typeof value === 'object') value.$parent = struct
+          type.write(opts, value)
         } else {
           type.write(opts, struct)
         }
@@ -97,14 +83,17 @@ function Struct (descriptor) {
     },
     size (struct) {
       return fields.reduce(
-        (size, [ name, type ]) => size + type.size(struct[name], struct),
+        (size, [ name, type ]) => size + type.size(name !== null ? struct[name] : struct, struct),
         0
       )
     }
   })
-  type.encode = encode
   type.field = (name, fieldType) => {
-    fields.push([name, getType(fieldType)])
+    if (typeof name === 'object') {
+      fields.push([null, getType(name)])
+    } else {
+      fields.push([name, getType(fieldType)])
+    }
     return type
   }
 

@@ -1,14 +1,4 @@
-/**
- * @param {Object} struct
- * @param {string} key
- * @return {*} Value.
- */
-function descend (struct, key) {
-  if (key.indexOf('.') === -1) {
-    return struct[key]
-  }
-  return key.split('.').reduce((struct, sub) => struct[sub], struct)
-}
+var dlv = require('dlv')
 
 /**
  * @param {Object} struct Object to find a value on.
@@ -26,7 +16,7 @@ module.exports = function getValue (struct, value) {
       struct = struct.$parent
       value = value.substr(3)
     }
-    return descend(struct, value)
+    return dlv(struct, value)
   } else if (typeof value === 'function') {
     return value.call(struct, struct)
   }

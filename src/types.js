@@ -1,6 +1,21 @@
-import { Buffer } from 'safe-buffer'
-import StructType from './StructType'
-import getValue from './getValue'
+const { Buffer } = require('safe-buffer')
+const StructType = require('./StructType')
+const getValue = require('./getValue')
+
+function fromAbstractEncoding (type) {
+  return StructType({
+    read (opts) {
+      const result = type.decode(opts.buf, opts.offset)
+      opts.offset += type.decode.bytes
+      return result
+    },
+    write (opts, value) {
+      type.encode(value, opts.buf, opts.offset)
+      opts.offset += type.encode.bytes
+    },
+    size: type.encodingLength
+  })
+}
 
 /**
  * @param {string|Object|function} type Type name to find, or a StructType-ish descriptor object.
@@ -10,6 +25,10 @@ function getType (type) {
   // an object that can read/write something. `type.size` can also be 0
   if (type.read && type.write && type.size != null) {
     return type.$structType ? type : StructType(type)
+  }
+  // abstract-encoding
+  if (type.encode && type.decode) {
+    return fromAbstractEncoding(type)
   }
 
   // Named types
@@ -169,9 +188,15 @@ const when = (condition, type) => {
 }
 
 const skip = (size) => StructType({
-  read (opts) { opts.offset += size },
-  write (opts) { opts.offset += size },
-  size
+  read (opts, struct) {
+    opts.offset += getValue(struct, size)
+  },
+  write (opts, struct) {
+    opts.offset += getValue(struct, size)
+  },
+  size (struct) {
+    return getValue(struct, size)
+  }
 })
 
 const types = {
