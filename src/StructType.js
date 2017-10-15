@@ -15,7 +15,7 @@ function StructType (descr, mapRead = [], mapWrite = []) {
 
   type.$structType = true
 
-  type.read = (...args) => {
+  type.read = function read (...args) {
     let val = descr.read.apply(type, args)
     for (let i = 0, l = mapRead.length; i < l; i++) {
       val = mapRead[i].call(type, val)
@@ -24,11 +24,11 @@ function StructType (descr, mapRead = [], mapWrite = []) {
   }
 
   if (type.write == null) {
-    type.write = () => {
+    type.write = function write () {
       throw new Error('unimplemented')
     }
   } else {
-    type.write = (opts, originalVal) => {
+    type.write = function write (opts, originalVal) {
       let val = originalVal
       for (let i = mapWrite.length - 1; i >= 0; i--) {
         val = mapWrite[i].call(type, val, opts)
