@@ -3,6 +3,7 @@
 var Struct = require('../src/Struct')
 var assert = require('assert')
 var Buffer = require('safe-buffer').Buffer
+var match = require('varstruct-match')
 
 describe('Creating structs', function () {
   var type = Struct.types.int8
@@ -442,5 +443,37 @@ describe('Fancy struct() features', function () {
       struct(buffer, { length: 2 }).value.length,
       2
     )
+  })
+})
+
+describe('abstract-encoding', function () {
+  var int8 = Struct.types.int8
+  var string = Struct.types.string
+
+  it('exposes an abstract-encoding interface', function () {
+    var struct = Struct([
+      ['a', int8],
+      ['b', int8]
+    ])
+
+    var buffer = struct.encode({ a: 1, b: 2 })
+    assert.deepEqual(buffer, Buffer.from([ 1, 2 ]))
+    assert.equal(struct.encode.bytes, 2)
+
+    assert.deepEqual(struct.decode(buffer), { a: 1, b: 2 })
+    assert.equal(struct.decode.bytes, 2)
+    assert.equal(struct.encodingLength({ a: 0, b: 0 }), 2)
+  })
+
+  it('can use abstract-encoding codecs as struct types', function () {
+    var struct = Struct([
+      ['value', match(int8, [
+        { match: 1, type: int8, test: function (arg) { return typeof arg === 'number' } },
+        { match: 7, type: string(4), test: function (arg) { return typeof arg === 'string' } }
+      ])]
+    ])
+
+    assert.deepEqual(struct.encode({ value: 10 }), Buffer.from([ 1, 10 ]))
+    assert.deepEqual(struct.encode({ value: 'aaaa' }), Buffer.from([ 7, 0x61, 0x61, 0x61, 0x61 ]))
   })
 })

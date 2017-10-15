@@ -90,6 +90,20 @@ But if it is nonzero, `struct(buffer)` will return an object of this shape:
 Instances of `Struct()` can be called directly to read data from buffers. The first parameter is the
 Buffer you want to use. The second (optional) parameter is a parent object for the struct, as shown in [Value Paths](#valuepaths).
 
+#### struct.decode(buffer)
+
+`abstract-encoding` compatible.
+
+#### struct.encode(value[, buffer]\[, start = 0])
+
+Encode `value` into a `buffer`. Start writing at offset `start`. If no `buffer` is given, awestruct allocates one.
+`abstract-encoding` compatible.
+
+#### struct.encodingLength(value)
+
+Return the size in bytes that would be necessary to encode `value`.
+`abstract-encoding` compatible.
+
 ### Custom types: Struct.Type(type)
 
 Creates a Struct type object. `type` is an object:

@@ -62,15 +62,21 @@ function StructType (descr, mapRead = [], mapWrite = []) {
   return type
 
   function encode (value, buffer, offset) {
+    if (!offset) {
+      offset = 0
+    }
     if (!buffer) {
       buffer = Buffer.alloc(type.size(value))
     }
     const opts = { buf: buffer, offset: offset }
-    const result = type.write(opts, value)
+    type.write(opts, value)
     encode.bytes = opts.offset - offset
-    return result
+    return opts.buf
   }
   function decode (buffer, start, end) {
+    if (!start) {
+      start = 0
+    }
     const opts = { buf: buffer, offset: start }
     const value = type.read(opts)
     decode.bytes = opts.offset - start

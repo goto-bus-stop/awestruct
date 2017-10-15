@@ -1,4 +1,3 @@
-const { Buffer } = require('safe-buffer')
 const StructType = require('./StructType')
 const { types, getType } = require('./types')
 const getValue = require('./getValue')
@@ -69,33 +68,17 @@ function Struct (descriptor) {
     return struct
   }
 
-  /**
-   * Encodes an object into a Buffer as described by this Struct.
-   * @param {Object} struct The Object to encode.
-   */
-  const encode = (struct, buffer) => {
-    if (typeof struct !== 'object') {
-      throw new TypeError('Expected an object')
-    }
-
-    const size = type.size(struct)
-    const opts = {
-      struct,
-      buf: buffer || Buffer.alloc(size),
-      offset: 0
-    }
-
-    type.write(opts, struct)
-
-    return opts.buf
-  }
-
   const type = StructType({
     read: decode,
     write (opts, struct) {
       fields.forEach(([ name, type ]) => {
-        const value = name !== null ? struct[name] : struct
-        type.write(opts, value)
+        if (name !== null) {
+          const value = struct[name]
+          if (typeof value === 'object') value.$parent = struct
+          type.write(opts, value)
+        } else {
+          type.write(opts, struct)
+        }
       })
     },
     size (struct) {
@@ -105,7 +88,6 @@ function Struct (descriptor) {
       )
     }
   })
-  type.encode = encode
   type.field = (name, fieldType) => {
     if (typeof name === 'object') {
       fields.push([null, getType(name)])
