@@ -39,13 +39,21 @@ function StructType (descr, mapRead = [], mapWrite = []) {
   }
 
   type.transform =
-  type.mapRead = (fn) =>
-    StructType(descr, [ ...mapRead, fn ], mapWrite)
-  type.mapWrite = (fn) =>
-    StructType(descr, mapRead, [ ...mapWrite, fn ])
-  type.map = (read, write) =>
-    StructType(descr, read ? [ ...mapRead, read ] : mapRead
-                    , write ? [ ...mapWrite, write ] : mapWrite)
+  type.mapRead = (fn) => StructType(
+    descr,
+    [ ...mapRead, fn ],
+    mapWrite
+  )
+  type.mapWrite = (fn) => StructType(
+    descr,
+    mapRead,
+    [ ...mapWrite, fn ]
+  )
+  type.map = (read, write) => StructType(
+    descr,
+    read ? [ ...mapRead, read ] : mapRead,
+    write ? [ ...mapWrite, write ] : mapWrite
+  )
 
   if (type.size == null) {
     type.size = () => {
