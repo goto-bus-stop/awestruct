@@ -1,7 +1,13 @@
 language: node_js
 sudo: false
+
+script:
+  - npm run test:mocha
+  - 'if [ $TRAVIS_NODE_VERSION = stable ]; then npm run test:lint; fi'
+
 node_js:
-  - 8
-  - 7
-  - 6
-  - 4
+  - 'stable'
+  - '9'
+  - '8'
+  - '6'
+  - '4'
