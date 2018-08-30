@@ -14,15 +14,15 @@ describe('Creating structs', function () {
       name: type,
       otherName: type
     })
-    assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
+    assert.deepStrictEqual(struct(buf), { name: 1, otherName: 2 })
   })
 
   it('supports .field(name, type)', function () {
     var struct = Struct().field('name', type)
-    assert.deepEqual(struct(buf), { name: 1 })
+    assert.deepStrictEqual(struct(buf), { name: 1 })
 
     struct.field('otherName', type)
-    assert.deepEqual(struct(buf), { name: 1, otherName: 2 })
+    assert.deepStrictEqual(struct(buf), { name: 1, otherName: 2 })
   })
 })
 
@@ -38,7 +38,7 @@ describe('Array definition', function (t) {
       ['c', int8]
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 1, 2, 3 ])), {
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 2, 3 ])), {
       a: 1,
       b: 2,
       c: 3
@@ -52,7 +52,7 @@ describe('Array definition', function (t) {
       ['b', int8]
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 2, 0, 0, 5 ])), {
+    assert.deepStrictEqual(struct(Buffer.from([ 2, 0, 0, 5 ])), {
       a: 2,
       b: 5
     })
@@ -68,7 +68,7 @@ describe('Array definition', function (t) {
       ]))
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 1, 3 ])), {
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 3 ])), {
       a: 1,
       c: 3
     })
@@ -87,7 +87,7 @@ describe('Reading data', function () {
       ['value', int8]
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 1, 2 ])), { nested: { value: 1 }, value: 2 })
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 2 ])), { nested: { value: 1 }, value: 2 })
   })
 
   it('continues reading after a nested struct in a context-preserving container type', function () {
@@ -98,7 +98,7 @@ describe('Reading data', function () {
       ['value', int8]
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 1, 2 ])), { array: [ { value: 1 } ], value: 2 })
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 2 ])), { array: [ { value: 1 } ], value: 2 })
 
     struct = Struct([
       ['size', int8],
@@ -107,7 +107,7 @@ describe('Reading data', function () {
       ]))]
     ])
 
-    assert.deepEqual(struct(Buffer.from([ 1, 2 ])), {
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 2 ])), {
       size: 1,
       array: [ { array: [ 2 ] } ]
     })
@@ -128,7 +128,7 @@ describe('Value paths', function () {
       ])]
     ])
 
-    assert.deepEqual(
+    assert.deepStrictEqual(
       struct(Buffer.from([ 2, 0x20, 0x20, 0x68, 0x69 ])),
       { size: 2, b: { text1: '  ', text2: 'hi' } }
     )
@@ -142,7 +142,7 @@ describe('Value paths', function () {
       }, int8)]
     ])
 
-    assert.deepEqual(
+    assert.deepStrictEqual(
       struct(Buffer.from([ 2, 0x20, 0x20, 0x68, 0x69 ])),
       { size: 2, doubleSizeArray: [ 0x20, 0x20, 0x68, 0x69 ] }
     )
@@ -161,34 +161,34 @@ describe('Struct types', function () {
   beforeEach(resetOffset)
 
   it('can read a thing', function () {
-    assert.equal(byte.read(opts), 10)
-    assert.equal(opts.offset, 1)
+    assert.strictEqual(byte.read(opts), 10)
+    assert.strictEqual(opts.offset, 1)
   })
 
   it('can be called as a function', function () {
     opts.offset = 1
-    assert.equal(byte(opts), 20)
+    assert.strictEqual(byte(opts), 20)
   })
 
   it('can read from a plain old buffer', function () {
-    assert.equal(byte(buf), 10)
+    assert.strictEqual(byte(buf), 10)
   })
 
   it('supports transforming read values using a mapping function', function () {
     var plus5 = byte.mapRead(function (a) { return a + 5 })
-    assert.equal(plus5(opts), 15)
+    assert.strictEqual(plus5(opts), 15)
 
     resetOffset()
 
     // old-style:
     var plus5Transform = byte.transform(function (a) { return a + 5 })
-    assert.equal(plus5Transform(opts), 15)
+    assert.strictEqual(plus5Transform(opts), 15)
   })
 
   it('supports transforming values back when writing using a mapping function', function () {
     var plus5 = byte.mapWrite(function (a) { return a - 5 })
     plus5.write({ buf: write, offset: 0 }, 15)
-    assert.equal(write[0], 10)
+    assert.strictEqual(write[0], 10)
 
     resetOffset()
 
@@ -198,16 +198,16 @@ describe('Struct types', function () {
       function write (a) { return a - 5 }
     )
     var result = plus5Short(opts)
-    assert.equal(result, 15)
+    assert.strictEqual(result, 15)
     plus5Short.write({ buf: write, offset: 0 }, 15)
-    assert.equal(write[0], 10)
+    assert.strictEqual(write[0], 10)
   })
 
   it('chains transforms', function () {
     var plus5 = byte.mapRead(function (a) { return a + 5 })
     var plus6 = plus5.mapRead(function (a) { return a + 1 })
-    assert.equal(plus5(opts), 15)
-    assert.equal(plus6(opts), 26)
+    assert.strictEqual(plus5(opts), 15)
+    assert.strictEqual(plus6(opts), 26)
   })
 
   it('chains transforms', function () {
@@ -219,21 +219,21 @@ describe('Struct types', function () {
       function (a) { return a * 2 },
       function (a) { return a / 2 }
     )
-    assert.equal(plus5(opts), 15)
+    assert.strictEqual(plus5(opts), 15)
     resetOffset()
-    assert.equal(plus5Times2(opts), 30)
+    assert.strictEqual(plus5Times2(opts), 30)
     plus5.write({ buf: write, offset: 0 }, 15)
-    assert.equal(write[0], 10)
+    assert.strictEqual(write[0], 10)
     plus5Times2.write({ buf: write, offset: 0 }, 30)
-    assert.equal(write[0], 10)
+    assert.strictEqual(write[0], 10)
   })
 
   it('creates a new type for transforms (issue #3)', function () {
     var int16 = Struct.types.int16
     var evil16 = int16.transform(function () { return 'lol' })
-    assert.notEqual(int16(opts), 'lol')
+    assert.notStrictEqual(int16(opts), 'lol')
     resetOffset()
-    assert.equal(evil16(opts), 'lol')
+    assert.strictEqual(evil16(opts), 'lol')
   })
 })
 
@@ -250,7 +250,7 @@ describe('Default types', function () {
       int32: 'int32'
     })
     it('supports intXX', function () {
-      assert.deepEqual(ints(buf), { int8: -1, int16: 1337, int32: 1000000000 })
+      assert.deepStrictEqual(ints(buf), { int8: -1, int16: 1337, int32: 1000000000 })
     })
   })
 
@@ -265,7 +265,7 @@ describe('Default types', function () {
         b: buffer(2)
       })
 
-      assert.deepEqual(simpleBuffer(buf), {
+      assert.deepStrictEqual(simpleBuffer(buf), {
         a: Buffer.from([ 0x00, 0x01 ]),
         b: Buffer.from([ 0x02, 0x03 ])
       })
@@ -281,8 +281,8 @@ describe('Default types', function () {
       copy.buffer[3] = 0x02
 
       // original remained unchanged
-      assert.deepEqual(buf, Buffer.from([ 0x00, 0x00, 0x00, 0x00 ]))
-      assert.deepEqual(copy.buffer, Buffer.from([ 0x00, 0x01, 0x00, 0x02 ]))
+      assert.deepStrictEqual(buf, Buffer.from([ 0x00, 0x00, 0x00, 0x00 ]))
+      assert.deepStrictEqual(copy.buffer, Buffer.from([ 0x00, 0x01, 0x00, 0x02 ]))
     })
 
     describe('writes buffers', function () {
@@ -292,17 +292,17 @@ describe('Default types', function () {
       it('writes from buffers of the same length', function () {
         var opts = { offset: 2, buf: Buffer.from(initialBuffer) }
         buffer5bytes.write(opts, Buffer.from([ 0xF3, 0xF4, 0xF5, 0xF6, 0xF7 ]))
-        assert.deepEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
+        assert.deepStrictEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
       })
       it('writes from buffers longer than needed', function () {
         var opts = { offset: 2, buf: Buffer.from(initialBuffer) }
         buffer5bytes.write(opts, Buffer.from([ 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0xF8, 0xF9 ]))
-        assert.deepEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
+        assert.deepStrictEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0xF6, 0xF7, 0x08, 0x09 ]))
       })
       it('writes from buffers shorter than needed and zero-fills the rest', function () {
         var opts = { offset: 2, buf: Buffer.from(initialBuffer) }
         buffer5bytes.write(opts, Buffer.from([ 0xF3, 0xF4, 0xF5 ]))
-        assert.deepEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0x00, 0x00, 0x08, 0x09 ]))
+        assert.deepStrictEqual(opts.buf, Buffer.from([ 0x01, 0x02, 0xF3, 0xF4, 0xF5, 0x00, 0x00, 0x08, 0x09 ]))
       })
     })
   })
@@ -315,7 +315,7 @@ describe('Default types', function () {
       var simpleArray = Struct({
         array: array(4, 'uint8')
       })
-      assert.deepEqual(simpleArray(buf), { array: [ 3, 1, 32, 255 ] })
+      assert.deepStrictEqual(simpleArray(buf), { array: [ 3, 1, 32, 255 ] })
     })
 
     it('reads variable length arrays', function () {
@@ -323,7 +323,7 @@ describe('Default types', function () {
         len: 'int8',
         array: array('len', 'uint8')
       })
-      assert.deepEqual(lengthArray(buf), { len: 3, array: [ 1, 32, 255 ] })
+      assert.deepStrictEqual(lengthArray(buf), { len: 3, array: [ 1, 32, 255 ] })
     })
 
     it('can take a function to compute the length', function () {
@@ -332,7 +332,7 @@ describe('Default types', function () {
         len2: 'int8',
         array: array(function () { return this.len - this.len2 }, 'uint8')
       })
-      assert.deepEqual(lengthArray(buf), { len: 3, len2: 1, array: [ 32, 255 ] })
+      assert.deepStrictEqual(lengthArray(buf), { len: 3, len2: 1, array: [ 32, 255 ] })
     })
   })
 
@@ -342,7 +342,7 @@ describe('Default types', function () {
 
     it('reads strings', function () {
       var string = Struct({ string: char(5) })
-      assert.equal(string(buf).string, 'hi :D')
+      assert.strictEqual(string(buf).string, 'hi :D')
     })
   })
 
@@ -361,7 +361,7 @@ describe('Default types', function () {
         next: int8
       })
 
-      assert.deepEqual(basicIf(buf), { pTrue: 1, pFalse: 0, two: 2, next: 3 })
+      assert.deepStrictEqual(basicIf(buf), { pTrue: 1, pFalse: 0, two: 2, next: 3 })
 
       var basicFalse = Struct({
         pTrue: int8,
@@ -370,7 +370,7 @@ describe('Default types', function () {
         next: int8
       })
 
-      assert.deepEqual(basicFalse(buf), { pTrue: 1, pFalse: 0, two: undefined, next: 2 })
+      assert.deepStrictEqual(basicFalse(buf), { pTrue: 1, pFalse: 0, two: undefined, next: 2 })
     })
 
     it('supports .else', function () {
@@ -380,9 +380,9 @@ describe('Default types', function () {
         value: _if('isLong', uint32).else(uint16)
       })
 
-      assert.deepEqual(basicIfElse(buf), { isLong: 1, value: 0xffffffff })
+      assert.deepStrictEqual(basicIfElse(buf), { isLong: 1, value: 0xffffffff })
       buf[0] = 0
-      assert.deepEqual(basicIfElse(buf), { isLong: 0, value: 0xffff })
+      assert.deepStrictEqual(basicIfElse(buf), { isLong: 0, value: 0xffff })
     })
   })
 })
@@ -409,7 +409,7 @@ describe('Custom types', function () {
       customType: myType
     })
 
-    assert.deepEqual(myStruct(Buffer.from([ 5, 5 ])), { builtinType: 5, customType: 5000 })
+    assert.deepStrictEqual(myStruct(Buffer.from([ 5, 5 ])), { builtinType: 5, customType: 5000 })
   })
 
   it('supports custom read-only types', function () {
@@ -418,7 +418,7 @@ describe('Custom types', function () {
         read: function () { return 10 }
       })
     })
-    assert.deepEqual(myStruct(Buffer.alloc(0)), { readonly: 10 })
+    assert.deepStrictEqual(myStruct(Buffer.alloc(0)), { readonly: 10 })
   })
 })
 
@@ -439,7 +439,7 @@ describe('Fancy struct() features', function () {
       /cannot access nonexistent parent/
     )
 
-    assert.equal(
+    assert.strictEqual(
       struct(buffer, { length: 2 }).value.length,
       2
     )
@@ -457,12 +457,12 @@ describe('abstract-encoding', function () {
     ])
 
     var buffer = struct.encode({ a: 1, b: 2 })
-    assert.deepEqual(buffer, Buffer.from([ 1, 2 ]))
-    assert.equal(struct.encode.bytes, 2)
+    assert.deepStrictEqual(buffer, Buffer.from([ 1, 2 ]))
+    assert.strictEqual(struct.encode.bytes, 2)
 
-    assert.deepEqual(struct.decode(buffer), { a: 1, b: 2 })
-    assert.equal(struct.decode.bytes, 2)
-    assert.equal(struct.encodingLength({ a: 0, b: 0 }), 2)
+    assert.deepStrictEqual(struct.decode(buffer), { a: 1, b: 2 })
+    assert.strictEqual(struct.decode.bytes, 2)
+    assert.strictEqual(struct.encodingLength({ a: 0, b: 0 }), 2)
   })
 
   it('can use abstract-encoding codecs as struct types', function () {
@@ -473,7 +473,7 @@ describe('abstract-encoding', function () {
       ])]
     ])
 
-    assert.deepEqual(struct.encode({ value: 10 }), Buffer.from([ 1, 10 ]))
-    assert.deepEqual(struct.encode({ value: 'aaaa' }), Buffer.from([ 7, 0x61, 0x61, 0x61, 0x61 ]))
+    assert.deepStrictEqual(struct.encode({ value: 10 }), Buffer.from([ 1, 10 ]))
+    assert.deepStrictEqual(struct.encode({ value: 'aaaa' }), Buffer.from([ 7, 0x61, 0x61, 0x61, 0x61 ]))
   })
 })
