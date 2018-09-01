@@ -313,6 +313,8 @@ describe('Default types', function () {
     var uint8 = Struct.types.uint8
     var array = Struct.types.array
     var dynarray = Struct.types.dynarray
+    var when = Struct.types.if
+    var skip = Struct.types.skip
 
     it('reads simple, constant length arrays', function () {
       var simpleArray = Struct({
@@ -336,6 +338,22 @@ describe('Default types', function () {
         array: array(function () { return this.len - this.len2 }, 'uint8')
       })
       assert.deepStrictEqual(lengthArray(buf), { len: 3, len2: 1, array: [ 32, 255 ] })
+    })
+
+    it('can read variable size elements', function () {
+      var dyn = array(10, Struct([
+        ['n', int8],
+        when('n', skip(4))
+      ]))
+
+      var b = Buffer.from([ 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 0, 0, 0, 0 ])
+      assert.deepEqual(dyn(b),
+        [ { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 },
+          { n: 1 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 } ])
+      assert.deepEqual(dyn.encode(
+        [ { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 },
+          { n: 1 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 } ]
+      ), [ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 ])
     })
 
     it('reads dynamic arrays', function () {

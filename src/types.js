@@ -132,9 +132,12 @@ const array = (length, type) => {
         typeClass.write(opts, value[i])
       }
     },
-    size: typeof length === 'number'
-      ? (value, struct) => length * type.size(value[0], struct)
-      : (value, struct) => value.length ? type.size(value[0], struct) * value.length : 0
+    size (value, struct) {
+      return value.reduce(
+        (len, element) => len + typeClass.size(element, struct),
+        0
+      )
+    }
   })
 }
 
