@@ -347,23 +347,23 @@ describe('Default types', function () {
       ]))
 
       var b = Buffer.from([ 0, 0, 0, 0, 0, 1, 2, 2, 2, 2, 0, 0, 0, 0 ])
-      assert.deepEqual(dyn(b),
+      assert.deepStrictEqual(dyn(b),
         [ { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 },
           { n: 1 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 } ])
-      assert.deepEqual(dyn.encode(
+      assert.deepStrictEqual(dyn.encode(
         [ { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 },
           { n: 1 }, { n: 0 }, { n: 0 }, { n: 0 }, { n: 0 } ]
-      ), [ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 ])
+      ), Buffer.from([ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 ]))
     })
 
     it('reads dynamic arrays', function () {
       var lengthArray = dynarray(int8, uint8)
-      assert.deepEqual(lengthArray(buf), [ 1, 32, 255 ])
+      assert.deepStrictEqual(lengthArray(buf), [ 1, 32, 255 ])
     })
 
     it('writes dynamic arrays', function () {
       var lengthArray = dynarray(int8, uint8)
-      assert.deepEqual(lengthArray.encode([ 1, 2, 3, 4 ]),
+      assert.deepStrictEqual(lengthArray.encode([ 1, 2, 3, 4 ]),
         Buffer.from([ 4, 1, 2, 3, 4 ]))
     })
   })
@@ -382,12 +382,12 @@ describe('Default types', function () {
     it('reads dynamically sized strings', function () {
       var buf = Buffer.from([ 0x5, 0x68, 0x69, 0x20, 0x3a, 0x44 ])
       var string = dynstring(int8)
-      assert.equal(string(buf), 'hi :D')
+      assert.strictEqual(string(buf), 'hi :D')
     })
 
     it('writes dynamically sized strings', function () {
       var string = dynstring(int8)
-      assert.deepEqual(string.encode('hello world'),
+      assert.deepStrictEqual(string.encode('hello world'),
         Buffer.from([ 11, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 ]))
     })
   })
