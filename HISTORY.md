@@ -1,3 +1,17 @@
+1.0.1 / 2018-09-01
+==================
+
+ - Add dynarray & dynstring for dynamic array/string sizes. This is a more friendly way to implement the common length-prefixed array/string type, without having to add a dummy `length` field to the object.
+ - Support differently sized elements in arrays. Byte sizes for arrays with variable-size elements are now calculated correctly.
+
+1.0.0 / 2017-10-29
+==================
+
+ - Fields can now be abstract-encoding compatible type objects
+ - Fields can now be specified as an array of [name, type] pairs. The array syntax also allows bare types,
+   whose value will be merged into the struct. This allows embedding different structs without nesting.
+ - Check input type in `.encode()`.
+
 0.12.3 / 2017-04-08
 ===================
 
