@@ -159,6 +159,52 @@ const string = (size, encoding = 'utf8') => StructType({
 // compat <=0.9.2
 const char = string
 
+const dynarray = (length, type) => {
+  const lengthType = getType(length)
+  const elementType = getType(type)
+  return StructType({
+    read (opts, parent) {
+      const l = lengthType.read(opts, parent)
+      const result = []
+      for (let i = 0; i < l; i++) {
+        result.push(elementType.read(opts, parent))
+      }
+      return result
+    },
+    write (opts, value) {
+      lengthType.write(opts, value.length)
+      for (let i = 0; i < value.length; i++) {
+        elementType.write(opts, value[i])
+      }
+    },
+    size (value, struct) {
+      // lengthType + each element
+      return value.reduce(
+        (len, element) => len + elementType.size(element, struct),
+        lengthType.size(value.length, struct)
+      )
+    }
+  })
+}
+
+const dynstring = (length, encoding = 'utf8') => {
+  const lengthType = getType(length)
+  return StructType({
+    read (opts, parent) {
+      const l = lengthType.read(opts, parent)
+      const result = opts.buf.toString(encoding, opts.offset, opts.offset + l)
+      opts.offset += l
+      return result
+    },
+    write (opts, value) {
+      lengthType.write(opts, value.length)
+      opts.buf.write(value, opts.offset, value.length, encoding)
+      opts.offset += value.length
+    },
+    size: (value, struct) => lengthType.size(value.length, struct) + value.length
+  })
+}
+
 // conditional type
 const when = (condition, type) => {
   type = getType(type)
@@ -217,7 +263,9 @@ const types = {
   doublebe,
   char,
   string,
+  dynstring,
   array,
+  dynarray,
   buffer,
   when,
   if: when,

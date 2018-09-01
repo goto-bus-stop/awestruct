@@ -164,6 +164,8 @@ These just map straight to the relevant `Buffer().read*()` methods. Number types
 
 * `string(n, encoding = 'utf8')` → Creates a type that decodes `n` bytes into a string with the given encoding (defaults to 'utf8')
 * `array(n, type)` → Creates a type that reads `n` items of Struct.Type `type` into an `n`-length array.
+* `dynstring(ntype, encoding = 'utf8')` → Creates a type that first reads the length `n` using the type in the first parameter, then decodes `n` bytes into a string with the given encoding.
+* `dynarray(ntype, type)` → Creates a type that first reads the length `n` using the type in the first parameter, then reads `n` items of type `type` into an `n`-length array.
 * `skip(n)` → Creates a type that skips `n` bytes and returns `undefined`.
 
 The `n` parameter in each of those is a Value Path.

@@ -309,7 +309,10 @@ describe('Default types', function () {
 
   describe('arrays', function () {
     var buf = Buffer.from([ 0x03, 0x01, 0x20, 0xff, 0x00 ])
+    var int8 = Struct.types.int8
+    var uint8 = Struct.types.uint8
     var array = Struct.types.array
+    var dynarray = Struct.types.dynarray
 
     it('reads simple, constant length arrays', function () {
       var simpleArray = Struct({
@@ -334,15 +337,40 @@ describe('Default types', function () {
       })
       assert.deepStrictEqual(lengthArray(buf), { len: 3, len2: 1, array: [ 32, 255 ] })
     })
+
+    it('reads dynamic arrays', function () {
+      var lengthArray = dynarray(int8, uint8)
+      assert.deepEqual(lengthArray(buf), [ 1, 32, 255 ])
+    })
+
+    it('writes dynamic arrays', function () {
+      var lengthArray = dynarray(int8, uint8)
+      assert.deepEqual(lengthArray.encode([ 1, 2, 3, 4 ]),
+        Buffer.from([ 4, 1, 2, 3, 4 ]))
+    })
   })
 
   describe('strings', function () {
-    var buf = Buffer.from([ 0x68, 0x69, 0x20, 0x3a, 0x44 ])
+    var int8 = Struct.types.int8
     var char = Struct.types.char
+    var dynstring = Struct.types.dynstring
 
     it('reads strings', function () {
+      var buf = Buffer.from([ 0x68, 0x69, 0x20, 0x3a, 0x44 ])
       var string = Struct({ string: char(5) })
       assert.strictEqual(string(buf).string, 'hi :D')
+    })
+
+    it('reads dynamically sized strings', function () {
+      var buf = Buffer.from([ 0x5, 0x68, 0x69, 0x20, 0x3a, 0x44 ])
+      var string = dynstring(int8)
+      assert.equal(string(buf), 'hi :D')
+    })
+
+    it('writes dynamically sized strings', function () {
+      var string = dynstring(int8)
+      assert.deepEqual(string.encode('hello world'),
+        Buffer.from([ 11, 104, 101, 108, 108, 111, 32, 119, 111, 114, 108, 100 ]))
     })
   })
 
