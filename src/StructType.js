@@ -3,11 +3,9 @@ const { Buffer } = require('safe-buffer')
 module.exports = StructType
 
 function StructType (descr, mapRead = [], mapWrite = []) {
-  const type = function read (buf, ...rest) {
-    return type.read(
-      Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf,
-      ...rest
-    )
+  const type = function read (buf, parent) {
+    const opts = Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf
+    return type.read(opts, parent)
   }
 
   Object.keys(descr).forEach((key) => {
@@ -16,8 +14,9 @@ function StructType (descr, mapRead = [], mapWrite = []) {
 
   type.$structType = true
 
-  type.read = function read (...args) {
-    let val = descr.read.apply(type, args)
+  const readImpl = descr.read.bind(type)
+  type.read = function read (opts, parent) {
+    let val = readImpl(opts, parent)
     for (let i = 0, l = mapRead.length; i < l; i++) {
       val = mapRead[i].call(type, val)
     }
@@ -29,12 +28,13 @@ function StructType (descr, mapRead = [], mapWrite = []) {
       throw new Error('unimplemented')
     }
   } else {
+    const writeImpl = descr.write.bind(type)
     type.write = function write (opts, originalVal) {
       let val = originalVal
       for (let i = mapWrite.length - 1; i >= 0; i--) {
         val = mapWrite[i].call(type, val, opts)
       }
-      return descr.write.call(type, opts, val)
+      return writeImpl(opts, val)
     }
   }
 
@@ -87,7 +87,7 @@ function StructType (descr, mapRead = [], mapWrite = []) {
       start = 0
     }
     const opts = { buf: buffer, offset: start }
-    const value = type.read(opts)
+    const value = type.read(opts, undefined)
     decode.bytes = opts.offset - start
     return value
   }
