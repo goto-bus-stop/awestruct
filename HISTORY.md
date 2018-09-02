@@ -1,4 +1,9 @@
-1.0.1 / 2018-09-01
+1.1.1 / 2018-09-02
+==================
+
+ - Speed up `type.read()` calls.
+
+1.1.0 / 2018-09-01
 ==================
 
  - Add dynarray & dynstring for dynamic array/string sizes. This is a more friendly way to implement the common length-prefixed array/string type, without having to add a dummy `length` field to the object.
