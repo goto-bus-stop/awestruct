@@ -71,13 +71,14 @@ function Struct (descriptor) {
   const type = StructType({
     read: decode,
     write (opts, struct) {
+      const subOpts = Object.assign({}, opts, { struct, parent: struct.$parent })
       fields.forEach(([ name, type ]) => {
         if (name !== null) {
           const value = struct[name]
-          if (typeof value === 'object') value.$parent = struct
-          type.write(opts, value)
+          if (typeof value === 'object' && !Array.isArray(value)) value.$parent = struct
+          type.write(subOpts, value)
         } else {
-          type.write(opts, struct)
+          type.write(subOpts, struct)
         }
       })
     },
