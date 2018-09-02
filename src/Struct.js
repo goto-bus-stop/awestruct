@@ -81,6 +81,7 @@ function Struct (descriptor) {
           type.write(subOpts, struct)
         }
       })
+      opts.offset = subOpts.offset
     },
     size (struct) {
       return fields.reduce(
