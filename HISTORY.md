@@ -1,3 +1,8 @@
+1.1.3 / 2019-02-26
+==================
+
+ - Improve performance when reading many of the same type of objects.
+
 1.1.2 / 2018-09-04
 ==================
 
