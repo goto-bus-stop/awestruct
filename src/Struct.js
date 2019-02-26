@@ -50,6 +50,7 @@ function Struct (descriptor) {
       return `${str}  ${JSON.stringify(name)}: undefined,\n`
     }, '')
 
+    // eslint-disable-next-line no-new-func
     structFactory = Function(`return {\n${objectDecl}}`)
   }
 
