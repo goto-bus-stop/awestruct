@@ -27,6 +27,6 @@
     "test:mocha": "mocha -r buble/register",
     "test:lint": "standard src/**/*.js test/**/*.js",
     "test": "npm run test:mocha && npm run test:lint",
-    "prepublish": "npm run build"
+    "prepare": "npm run build"
   }
 }
