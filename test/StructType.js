@@ -112,6 +112,24 @@ describe('Reading data', function () {
       array: [ { array: [ 2 ] } ]
     })
   })
+
+  it('throws a helpful message when a key cannot be read', function () {
+    var struct = Struct([
+      ['nesting', Struct([
+        ['a', int8],
+        ['b', Struct([
+          ['fails', array(1000, int8)]
+        ])]
+      ])]
+    ])
+
+    assert.throws(
+      function () {
+        struct(Buffer.from([ 1, 2, 3, 4, 5, 6 ]))
+      },
+      /Error reading 'nesting.b.fails'/
+    )
+  })
 })
 
 describe('Value paths', function () {

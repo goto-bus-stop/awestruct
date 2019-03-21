@@ -59,6 +59,25 @@ function Struct (descriptor) {
    * @param {Object|Buffer} opts A Buffer to decode.
    */
   const decode = (opts, parent) => {
+    if (!parent) {
+      opts.path = opts.path || []
+      return tryDecode(opts, parent)
+    } else {
+      return realDecode(opts, parent)
+    }
+  }
+
+  const tryDecode = (opts, parent) => {
+    try {
+      return realDecode(opts, parent)
+    } catch (err) {
+      err.path = opts.path
+      err.message = `Error reading '${err.path.join('.')}': ${err.message}`
+      throw err
+    }
+  }
+
+  const realDecode = (opts, parent) => {
     if (!structFactory) {
       buildStructFactory()
     }
@@ -69,7 +88,8 @@ function Struct (descriptor) {
       struct,
       buf: opts.buf,
       offset: opts.offset || 0,
-      parent: parent || null
+      parent: parent || null,
+      path: opts.path || null
     }
 
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
@@ -87,12 +107,14 @@ function Struct (descriptor) {
 
     for (let i = 0; i < fields.length; i++) {
       const [name, type] = fields[i]
+      if (subOpts.path !== null) subOpts.path.push(name)
       const value = type.read(subOpts, struct)
       if (name !== null) {
         struct[name] = value
       } else if (typeof value === 'object') {
         Object.assign(struct, value)
       }
+      if (subOpts.path !== null) subOpts.path.pop()
     }
 
     // ensure that the parent continues reading in the right spot
