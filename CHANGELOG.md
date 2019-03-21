@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+# 1.2.0 / 2019-93-21
+- Add the field name (or path, for nested structs) to error messages when reading fails.
+
 # 1.1.3 / 2019-02-26
 - Improve performance when reading many of the same type of objects.
 
