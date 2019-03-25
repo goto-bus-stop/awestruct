@@ -9,50 +9,38 @@ const kFieldNames = typeof Symbol === 'function' ? Symbol('field names') : '__kF
  * @return {function()} Buffer decoding function, with StructType properties and an `.encode` method to encode Buffers.
  */
 function Struct (descriptor) {
-  let fields
-  if (Array.isArray(descriptor)) {
-    fields = descriptor.map((field) => {
+  const fields = Array.isArray(descriptor)
+    ? descriptor.map((field) => {
       if (Array.isArray(field)) {
         return [field[0], getType(field[1])]
       }
       return [null, getType(field)]
     })
-  } else if (descriptor) {
-    fields = Object.keys(descriptor).map((key) => [
+    : Object.keys(descriptor).map((key) => [
       key,
       getType(descriptor[key])
     ])
-  } else {
-    fields = []
-  }
 
   // List of all field names in the struct, including embedded structs
-  let cachedFieldNames = null
-  let structFactory = null
+  const fieldNames = fields.reduce((acc, [key, value]) => {
+    if (key) {
+      acc.push(key)
+    } else if (value && value[kFieldNames]) {
+      acc.push(...value[kFieldNames]())
+    }
+    return acc
+  }, [])
+
   // Build a function that creates an entire struct object with all fields
   // set to undefined.
   // This means V8 doesn't have to build up the structure for every struct
   // after every assignment, saving some time
-  //
-  // Done lazily because we have a .field() method for some reason…
-  function buildStructFactory () {
-    cachedFieldNames = []
-    for (let i = 0; i < fields.length; i++) {
-      const [key, value] = fields[i]
-      if (key) {
-        cachedFieldNames.push(key)
-      } else if (value && value[kFieldNames]) {
-        cachedFieldNames.push(...value[kFieldNames]())
-      }
-    }
-
-    const objectDecl = cachedFieldNames.reduce((str, name) => {
+  // eslint-disable-next-line no-new-func
+  const structFactory = Function(`return {\n${
+    fieldNames.reduce((str, name) => {
       return `${str}  ${JSON.stringify(name)}: undefined,\n`
     }, '')
-
-    // eslint-disable-next-line no-new-func
-    structFactory = Function(`return {\n${objectDecl}}`)
-  }
+  }}`)
 
   /**
    * Decodes a buffer into the object structure as described by this Struct.
@@ -78,10 +66,6 @@ function Struct (descriptor) {
   }
 
   const realDecode = (opts, parent) => {
-    if (!structFactory) {
-      buildStructFactory()
-    }
-
     const struct = structFactory()
     // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
     const subOpts = {
@@ -148,18 +132,9 @@ function Struct (descriptor) {
       )
     }
   })
-  type.field = (name, fieldType) => {
-    if (typeof name === 'object') {
-      fields.push([null, getType(name)])
-    } else {
-      fields.push([name, getType(fieldType)])
-    }
-    return type
-  }
 
   type[kFieldNames] = () => {
-    if (!cachedFieldNames) buildStructFactory()
-    return cachedFieldNames
+    return fieldNames
   }
 
   return type

@@ -6,30 +6,20 @@ var Buffer = require('safe-buffer').Buffer
 var match = require('varstruct-match')
 
 describe('Creating structs', function () {
-  var type = Struct.types.int8
-  var buf = Buffer.from([ 1, 2 ])
-
-  it('supports objects of name→type pairs', function () {
-    var struct = Struct({
-      name: type,
-      otherName: type
-    })
-    assert.deepStrictEqual(struct(buf), { name: 1, otherName: 2 })
-  })
-
-  it('supports .field(name, type)', function () {
-    var struct = Struct().field('name', type)
-    assert.deepStrictEqual(struct(buf), { name: 1 })
-
-    struct.field('otherName', type)
-    assert.deepStrictEqual(struct(buf), { name: 1, otherName: 2 })
-  })
-})
-
-describe('Array definition', function (t) {
   var int8 = Struct.types.int8
   var skip = Struct.types.skip
   var when = Struct.types.if
+
+  it('supports objects of name→type pairs', function () {
+    var struct = Struct({
+      name: int8,
+      otherName: int8
+    })
+    assert.deepStrictEqual(struct(Buffer.from([ 1, 2 ])), {
+      name: 1,
+      otherName: 2
+    })
+  })
 
   it('can receive an array of name,type pairs', function () {
     var struct = Struct([
