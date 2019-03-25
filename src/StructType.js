@@ -15,20 +15,22 @@ function StructType (descr, mapRead = [], mapWrite = []) {
 
   type.$structType = true
 
-  const readImpl = descr.read.bind(type)
-  type.read = function read (opts, parent) {
-    let val = readImpl(opts, parent)
-    for (let i = 0, l = mapRead.length; i < l; i++) {
-      val = mapRead[i].call(type, val)
+  if (mapRead.length > 0) {
+    const readImpl = descr.read.bind(type)
+    type.read = function read (opts, parent) {
+      let val = readImpl(opts, parent)
+      for (let i = 0, l = mapRead.length; i < l; i++) {
+        val = mapRead[i].call(type, val)
+      }
+      return val
     }
-    return val
   }
 
   if (type.write == null) {
     type.write = function write () {
       throw new Error('unimplemented')
     }
-  } else {
+  } else if (mapWrite.length > 0) {
     const writeImpl = descr.write.bind(type)
     type.write = function write (opts, originalVal) {
       let val = originalVal
