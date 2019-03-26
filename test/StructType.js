@@ -157,7 +157,7 @@ describe('Value paths', function () {
       ['size', int8],
       ['b', Struct([
         Struct([
-          ['text1', string('../size')]
+          ['text1', string('../../size')]
         ])
       ])],
       ['c', array(2, Struct([
