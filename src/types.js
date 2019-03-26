@@ -47,15 +47,17 @@ function getType (type) {
  * @param {string} writeName Name of the writing method.
  */
 const makeBufferType = (size, readName, writeName) => StructType({
-  read (opts) {
-    const result = opts.buf[readName](opts.offset)
-    opts.offset += size
+  // eslint-disable-next-line no-new-func
+  read: Function('opts', `
+    var result = opts.buf.${readName}(opts.offset)
+    opts.offset += ${size}
     return result
-  },
-  write (opts, value) {
-    opts.buf[writeName](value, opts.offset)
-    opts.offset += size
-  },
+  `),
+  // eslint-disable-next-line no-new-func
+  write: Function('opts', 'value', `
+    opts.buf.${writeName}(value, opts.offset)
+    opts.offset += ${size}
+  `),
   size
 })
 
