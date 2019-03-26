@@ -41,7 +41,7 @@ function Struct (descriptor) {
       const [key, value] = fields[i]
       if (key) {
         cachedFieldNames.push(key)
-      } else if (value && value[kFieldNames]) {
+      } else if (value && value.embeddable && value[kFieldNames]) {
         cachedFieldNames.push(...value[kFieldNames]())
       }
     }
@@ -82,10 +82,15 @@ function Struct (descriptor) {
       buildStructFactory()
     }
 
-    const struct = structFactory()
-    // if there is a parent struct, then we need to start at some offset (namely where this struct starts)
+    // If this structure is embedded in another, write properties to the embedder
+    // immediately instead of `Object.assign`ing them later
+    const struct = opts.embedded
+      ? parent
+      : structFactory()
+
     const subOpts = {
       struct,
+      embedded: false,
       buf: opts.buf,
       offset: opts.offset || 0,
       parent: parent || null,
@@ -93,7 +98,7 @@ function Struct (descriptor) {
     }
 
     // `struct` gets a temporary `.$parent` property so dependencies can travel up the chain, like in:
-    // ```
+    // ```js
     // Struct({
     //   size: int8,
     //   b: Struct({
@@ -103,29 +108,43 @@ function Struct (descriptor) {
     // })
     // ```
     // Where ../size needs to access parent structs.
-    struct.$parent = parent || null
+    // If this is an embedded struct, the $parent property is already set.
+    if (!opts.embedded) {
+      struct.$parent = parent || null
+    }
 
     for (let i = 0; i < fields.length; i++) {
       const [name, type] = fields[i]
       if (subOpts.path !== null) subOpts.path.push(name)
-      const value = type.read(subOpts, struct)
+
       if (name !== null) {
-        struct[name] = value
-      } else if (typeof value === 'object') {
-        Object.assign(struct, value)
+        struct[name] = type.read(subOpts, struct)
+      } else if (type.embeddable) {
+        subOpts.embedded = true
+        type.read(subOpts, struct)
+        subOpts.embedded = false
+      } else {
+        const value = type.read(subOpts, struct)
+        if (typeof value === 'object') {
+          Object.assign(struct, value)
+        }
       }
+
       if (subOpts.path !== null) subOpts.path.pop()
     }
 
     // ensure that the parent continues reading in the right spot
     opts.offset = subOpts.offset
 
-    delete struct.$parent
+    if (!opts.embedded) {
+      delete struct.$parent
+    }
 
     return struct
   }
 
   const type = StructType({
+    embeddable: true,
     read: decode,
     write (opts, struct) {
       const subOpts = Object.assign({}, opts, { struct, parent: struct.$parent })
