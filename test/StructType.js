@@ -152,6 +152,33 @@ describe('Value paths', function () {
     )
   })
 
+  it('supports accessing parent structs through embedded structs', function () {
+    var struct = Struct([
+      ['size', int8],
+      ['b', Struct([
+        Struct([
+          ['text1', string('../size')]
+        ])
+      ])],
+      ['c', array(2, Struct([
+        ['text2', string('../size')]
+      ]))]
+    ])
+    assert.deepStrictEqual(
+      struct(Buffer.from([ 5, 0x68, 0x65, 0x6c, 0x6c, 0x6f, 0x77, 0x6f, 0x72, 0x6c, 0x64, 0x61, 0x62, 0x63, 0x64, 0x65 ])),
+      {
+        size: 5,
+        b: {
+          text1: 'hello'
+        },
+        c: [
+          { text2: 'world' },
+          { text2: 'abcde' }
+        ]
+      }
+    )
+  })
+
   it('can be a function', function () {
     var struct = Struct([
       ['size', int8],
