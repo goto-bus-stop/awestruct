@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+# 1.2.3 / 2019-03-26
+- Revert the 1.2.1 release, it was accidentally breaking.
+  That (significant!) performance improvement will be done in v2 instead.
+
 # 1.2.2 / 2019-03-26
 - Improve performance of Buffer method types (uint8, int32, float).
 - Remove unnecessary function wrapper for types that don't have a mapper function from `mapRead()` or `mapWrite()`
