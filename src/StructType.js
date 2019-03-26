@@ -8,7 +8,6 @@ function StructType (descr, mapRead = [], mapWrite = []) {
     return type.read(opts, parent)
   }
 
-  type.embeddable = false
   Object.keys(descr).forEach((key) => {
     type[key] = descr[key]
   })
