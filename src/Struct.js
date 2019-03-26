@@ -41,7 +41,7 @@ function Struct (descriptor) {
       const [key, value] = fields[i]
       if (key) {
         cachedFieldNames.push(key)
-      } else if (value && value[kFieldNames]) {
+      } else if (value && value.embeddable && value[kFieldNames]) {
         cachedFieldNames.push(...value[kFieldNames]())
       }
     }
