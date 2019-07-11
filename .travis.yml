@@ -1,10 +1,7 @@
 language: node_js
-sudo: false
-
 script:
   - npm run test:mocha
   - 'if [ $TRAVIS_NODE_VERSION = stable ]; then npm run test:lint; fi'
-
 node_js:
   - 'stable'
   - '11'
