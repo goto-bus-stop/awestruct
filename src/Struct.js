@@ -143,7 +143,7 @@ function Struct (descriptor) {
     },
     size (struct) {
       return fields.reduce(
-        (size, [ name, type ]) => size + type.size(name !== null ? struct[name] : struct, struct),
+        (size, [name, type]) => size + type.size(name !== null ? struct[name] : struct, struct),
         0
       )
     }
