@@ -2,15 +2,9 @@
   "name": "awestruct",
   "description": "Library for reading binary Buffer structures into objects in Node.js",
   "version": "1.2.4",
-  "license": "MIT",
-  "keywords": [
-    "buffer",
-    "struct"
-  ],
-  "bugs": "https://github.com/goto-bus-stop/awestruct/issues",
   "author": "Renée Kooi <renee@kooi.me>",
-  "main": "lib/Struct",
-  "repository": "goto-bus-stop/awestruct",
+  "homepage": "https://github.com/goto-bus-stop/awestruct",
+  "bugs": "https://github.com/goto-bus-stop/awestruct/issues",
   "dependencies": {
     "dlv": "^1.1.3",
     "safe-buffer": "^5.2.0"
@@ -22,16 +16,23 @@
     "standard": "^13.0.0",
     "varstruct-match": "^3.1.0"
   },
-  "scripts": {
-    "build": "buble src -o lib",
-    "test:mocha": "mocha -r buble/register",
-    "test:lint": "standard src/**/*.js test/**/*.js",
-    "test": "npm run test:mocha && npm run test:lint",
-    "prepare": "npm run build"
-  },
   "greenkeeper": {
     "ignore": [
       "mocha"
     ]
+  },
+  "keywords": [
+    "buffer",
+    "struct"
+  ],
+  "license": "MIT",
+  "main": "lib/Struct",
+  "repository": "goto-bus-stop/awestruct",
+  "scripts": {
+    "build": "buble src -o lib",
+    "prepare": "npm run build",
+    "test": "npm run test:mocha && npm run test:lint",
+    "test:lint": "standard src/**/*.js test/**/*.js",
+    "test:mocha": "mocha -r buble/register"
   }
 }
