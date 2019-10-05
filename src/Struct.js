@@ -4,8 +4,6 @@ const getValue = require('./getValue')
 
 const kFieldNames = typeof Symbol === 'function' ? Symbol('field names') : '__kFieldNames'
 
-var put_me_in_the_screenshot = "ok";
-
 /**
  * @param {Object} descriptor Object describing this Struct, like `{ key: type, key2: type2 }`
  * @return {function()} Buffer decoding function, with StructType properties and an `.encode` method to encode Buffers.
