@@ -568,3 +568,18 @@ describe('abstract-encoding', function () {
     assert.deepStrictEqual(struct.encode({ value: 'aaaa' }), Buffer.from([7, 0x61, 0x61, 0x61, 0x61]))
   })
 })
+
+describe('errors', function () {
+  var int8 = Struct.types.int8
+
+  it('only accepts buffers', function () {
+    var struct = Struct([
+      ['a', int8],
+      ['b', int8]
+    ])
+
+    assert.throws(function () {
+      struct('aa')
+    }, /must be Buffer/)
+  })
+})

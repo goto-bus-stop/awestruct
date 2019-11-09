@@ -4,7 +4,12 @@ module.exports = StructType
 
 function StructType (descr, mapRead = [], mapWrite = []) {
   const type = function read (buf, parent) {
-    const opts = Buffer.isBuffer(buf) ? { buf: buf, offset: 0 } : buf
+    const isBuffer = Buffer.isBuffer(buf)
+    if (!isBuffer && typeof buf !== 'object') {
+      throw new TypeError(`awestruct: first argument to read/decode function must be Buffer or options object, got ${typeof buf}`)
+    }
+
+    const opts = isBuffer ? { buf: buf, offset: 0 } : buf
     return type.read(opts, parent)
   }
 

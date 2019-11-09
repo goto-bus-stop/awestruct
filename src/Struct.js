@@ -72,7 +72,9 @@ function Struct (descriptor) {
       return realDecode(opts, parent)
     } catch (err) {
       err.path = opts.path
-      err.message = `Error reading '${err.path.join('.')}': ${err.message}`
+      if (err.path !== null) {
+        err.message = `Error reading '${err.path.join('.')}': ${err.message}`
+      }
       throw err
     }
   }
