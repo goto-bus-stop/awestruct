@@ -1,7 +1,7 @@
 {
   "name": "awestruct",
   "description": "Library for reading binary Buffer structures into objects in Node.js",
-  "version": "1.2.4",
+  "version": "1.2.5",
   "author": "Renée Kooi <renee@kooi.me>",
   "homepage": "https://github.com/goto-bus-stop/awestruct",
   "bugs": "https://github.com/goto-bus-stop/awestruct/issues",

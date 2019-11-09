@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 This project adheres to [Semantic Versioning](http://semver.org/).
 
+# 1.2.5 / 2019-11-09
+- Type-check argument type for `read()` functions.
+
 # 1.2.4 / 2019-05-11
 - Update author name in package.json.
 
