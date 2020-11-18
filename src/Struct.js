@@ -1,3 +1,5 @@
+'use strict'
+
 const StructType = require('./StructType')
 const { types, getType } = require('./types')
 const getValue = require('./getValue')
