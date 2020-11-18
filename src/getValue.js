@@ -1,4 +1,6 @@
-var dlv = require('dlv')
+'use strict'
+
+const dlv = require('dlv')
 
 /**
  * @param {Object} struct Object to find a value on.

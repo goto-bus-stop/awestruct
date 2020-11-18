@@ -1,3 +1,5 @@
+'use strict'
+
 const { Buffer } = require('safe-buffer')
 const StructType = require('./StructType')
 const getValue = require('./getValue')
