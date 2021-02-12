@@ -14,7 +14,7 @@
     "@babel/core": "^7.12.3",
     "@babel/preset-env": "^7.12.1",
     "@babel/register": "^7.12.1",
-    "mocha": "^5.0.0",
+    "mocha": "^8.3.0",
     "standard": "^16.0.3",
     "varstruct-match": "^3.1.0"
   },
