@@ -11,15 +11,15 @@ jobs:
         node-version: [4.x, 6.x, 8.x, 10.x, 12.x, 14.x, 16.x, 18.x, 20.x, 22.x]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
     - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v1
+      uses: actions/setup-node@v4
       with:
         node-version: ${{ matrix.node-version }}
+    - name: Install dependencies
+      run: npm install
     - name: Mocha
-      run: |
-        npm install
-        npm run test:mocha
+      run: npm run tests-only
       env:
         CI: true
 
@@ -27,11 +27,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
-    - name: Linting
-      uses: goto-bus-stop/standard-action@v1
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
       with:
-        annotate: true
-        files: '{src/**/*.js,test/**/*.js}'
-      env:
-        GITHUB_TOKEN: ${{secrets.GITHUB_TOKEN}}
+        node-version: lts/*
+    - name: Install dependencies
+      run: npm install
+    - name: Run standard
+      run: npm run lint

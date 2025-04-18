@@ -28,8 +28,8 @@
   "scripts": {
     "build": "babel src --out-dir lib",
     "prepare": "npm run build",
-    "test": "npm run test:mocha && npm run test:lint",
-    "test:lint": "standard src/**/*.js test/**/*.js",
-    "test:mocha": "mocha -r @babel/register"
+    "test": "npm run tests-only && npm run lint",
+    "lint": "standard src/**/*.js test/**/*.js",
+    "tests-only": "mocha -r @babel/register"
   }
 }
