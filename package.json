@@ -18,11 +18,6 @@
     "standard": "^16.0.3",
     "varstruct-match": "^3.1.0"
   },
-  "greenkeeper": {
-    "ignore": [
-      "mocha"
-    ]
-  },
   "keywords": [
     "buffer",
     "struct"
